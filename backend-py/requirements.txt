@@ -1,0 +1,10 @@
+fastapi[all] 
+uvicorn 
+pydantic 
+python-dotenv 
+passlib[bcrypt] 
+python-jose[cryptography] 
+PyJWT 
+numpy 
+pandas 
+requests
