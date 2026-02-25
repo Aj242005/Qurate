@@ -8,3 +8,5 @@ PyJWT
 numpy 
 pandas 
 requests
+bcrypt
+pymongo
