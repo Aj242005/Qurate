@@ -12,13 +12,13 @@ class User(BaseModel):
     user_id = Annotated(str,Field(description="unique user id"))
     name = Annotated(str,Field(description="Name of the user with a max length of about 50 chars",max_length=50,min_length=1))
     email = Annotated(EmailStr,Field(description="email id of the user"))
-    purpose = Annotated(str | None, Field(default=None,description="purpose of using this application"))
+    #purpose = Annotated(str | None, Field(default=None,description="purpose of using this application"))
     gender = Annotated(str, Field(description="Gender of the user"))
     dob = Annotated(DOB,Field(description="Date of birth of the user"))
     password = Annotated(bytes,Field(description="Encrypted password of the user"))
     user_type = Annotated(str,Field(default="freemium",description="Either premium , freemium user or enterprise"))
     phone_number = Annotated(str, Field(description="Phone number of the user"))
-    
+
 
     @field_validator("user-type")
     @classmethod
