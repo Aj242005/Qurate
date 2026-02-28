@@ -10,3 +10,6 @@ pandas
 requests
 bcrypt
 pymongo
+typing
+datetime
+uuid
