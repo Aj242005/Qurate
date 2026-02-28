@@ -7,10 +7,9 @@ class Password:
     def generate_salt(self):
         self.pass_salt = gensalt()
     
-    @staticmethod
-    def hashPassword(password : bytes, salt : bytes )-> bytes :
-        hash = hashpw( password = password ,
-                    salt = salt
+    def hashPassword(self)-> bytes :
+        hash = hashpw( password = self.password ,
+                    salt = self.pass_salt
                     )
         return hash
     

@@ -8,7 +8,7 @@ class UserRes(BaseModel):
     purpose: Annotated[str | None, Field(default=None, description="purpose of using this application")]
     gender: Annotated[str, Field(description="Gender of the user")]
     password: Annotated[bytes, Field(description="Encrypted password of the user")]
-    phone_number: Annotated[str, Field(description="Phone number of the user")]
+    phone_number: Annotated[int, Field(description="Phone number of the user",gt=999999999,lt=10000000000)]
 
     @field_validator("gender")
     @classmethod
