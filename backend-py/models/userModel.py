@@ -27,3 +27,7 @@ class User(UserRes):
         if value.lower() not in ["premium", "freemium", "enterprise"]:
             raise ValueError("Invalid user type")
         return value.lower()
+    
+class loginReq(BaseModel):
+    email:Annotated[EmailStr,Field(description="email id of the user")]
+    password:Annotated[str,Field(description="password in string format by the user")]
