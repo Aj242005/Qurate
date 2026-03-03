@@ -48,17 +48,23 @@ async def signUp(user: userModel.UserRes):
         response = mongo_db.addUserInfoToDB(user)
         return response
     
-@server.post('/login', response_model= falseRes.ErrRes | trueRes.SuccessRes)
-def login(user:userModel.loginReq):
+    
+    
+#, response_model= falseRes.ErrRes | trueRes.SuccessRes
+@server.post('/login')
+def login(user: userModel.loginReq):
     db_user=mongo_db.retreieveUserInfo(email=user.email)
     if db_user is None:
         return falseRes.ErrRes(
             status=401,
             message="user not found"
         )
-    db_user=db_user["anotherValid"]    
-    password_byte=user.password.encode()
-    is_valid=password.Password.verifyPassword(password_byte,db_user["password"])
+    db_user = db_user["anotherValid"]
+    
+    password_byte = user.password.encode()
+    
+    is_valid=password.Password.verifyPassword(password_byte,db_user["password"].encode('utf-8'))
+    
     if not is_valid:
         return falseRes.ErrRes(
             status=401,

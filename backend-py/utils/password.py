@@ -7,11 +7,11 @@ class Password:
     def generate_salt(self):
         self.pass_salt = gensalt()
     
-    def hashPassword(self)-> bytes :
+    def hashPassword(self)-> str :
         hash = hashpw( password = self.password ,
                     salt = self.pass_salt
                     )
-        return hash
+        return hash.decode()
     
     @staticmethod
     def verifyPassword(password : bytes, encrypted_pass : bytes)-> bool:
