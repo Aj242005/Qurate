@@ -50,7 +50,7 @@ async def signUp(user: userModel.UserRes):
     
     
     
-#
+        
 @server.post('/login', response_model= falseRes.ErrRes | trueRes.SuccessRes)
 def login(user: userModel.loginReq):
     db_user=mongo_db.retreieveUserInfo(email=user.email)
