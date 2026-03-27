@@ -6,7 +6,7 @@ class RedisBasic:
 
     def addUserDataToRedis(self,user : userModel.User)-> falseRes.ErrRes | trueRes.SuccessRes :
         try:
-            response = self.redisClient.hset(f'user:{user.user_id}',mapping=user)
+            response = self.redisClient.hset(f'user:{user.user_id}',mapping=user.model_dump())
             return trueRes.SuccessRes(
                 status = 201,
                 message = "successfully added the user to redis",

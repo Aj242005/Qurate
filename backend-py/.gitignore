@@ -69,3 +69,7 @@ coverage.xml
 *.log
 *.seed
 *.pad
+
+
+#mine
+start.dev.sh
