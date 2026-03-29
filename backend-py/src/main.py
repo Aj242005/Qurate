@@ -8,8 +8,8 @@ from db import mongo
 
 load_dotenv()
 
-mongo_uri = os.getenv("MONGO_URI")
-gemini_api = os.getenv("GEMINI_API_KEY")
+mongo_uri = str(os.getenv("MONGO_URI"))
+gemini_api = str(os.getenv("GEMINI_API_KEY"))
 server = FastAPI()
 
 mongo_db = mongo.MongoDB(mongo_uri)
@@ -56,8 +56,9 @@ def login(user: userModel.loginReq):
     db_user=mongo_db.retreieveUserInfo(email=user.email)
     if db_user is None:
         return falseRes.ErrRes(
-            status=401,
-            message="user not found"
+            status = 401,
+            message = "user not found",
+            anotherValid = None
         )
     db_user = db_user["anotherValid"]
     
@@ -68,10 +69,12 @@ def login(user: userModel.loginReq):
     if not is_valid:
         return falseRes.ErrRes(
             status=401,
-            message="invalid password"
+            message="invalid password",
+            anotherValid = None
         )
     else:
         return trueRes.SuccessRes(
             status=200,
-            message="logged in succesfully"
+            message="logged in succesfully",
+            anotherValid = None
         )
