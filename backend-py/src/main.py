@@ -4,16 +4,21 @@ import os
 from models import falseRes, userModel, trueRes
 from utils import generateuuid,password
 from db import mongo
-
+from utils.jwt import JWToken
 
 load_dotenv()
 
 mongo_uri = str(os.getenv("MONGO_URI"))
 gemini_api = str(os.getenv("GEMINI_API_KEY"))
+access_secret = str(os.getenv("ACCESS_TOKEN_SECRET_KEY"))
+access_duration = int(os.getenv("ACCESS_TOKEN_DURATION"))
+refresh_secret = str(os.getenv("REFRESH_TOKNE_SECRET_KEY"))
+refresh_duration = int(os.getenv("REFRESH_TOKEN_DURATION"))
 server = FastAPI()
 
 mongo_db = mongo.MongoDB(mongo_uri)
-
+access_token = JWToken(secret=access_secret,duration=access_duration)
+refresh_token = JWToken(secret=refresh_secret,duration=refresh_secret)
 
 @server.get("/")
 def homeRoute():
@@ -53,7 +58,7 @@ async def signUp(user: userModel.UserRes):
         
 @server.post('/login', response_model= falseRes.ErrRes | trueRes.SuccessRes)
 def login(user: userModel.loginReq):
-    db_user=mongo_db.retreieveUserInfo(email=user.email)
+    db_user = mongo_db.retreieveUserInfo(email=user.email)
     if db_user is None:
         return falseRes.ErrRes(
             status = 401,
@@ -73,8 +78,22 @@ def login(user: userModel.loginReq):
             anotherValid = None
         )
     else:
+        email = db_user["email"]
+        user_id = db_user["user_id"]
+        name = db_user["name"]
+        payload = {
+            "email" : email ,
+            "user_id": user_id,
+            "name": name
+        }
+
         return trueRes.SuccessRes(
             status=200,
             message="logged in succesfully",
             anotherValid = None
         )
+    
+@server.get('/random-unit-testing-route')
+def unit_testing():
+    token = AccessToken("12234234","20m")
+    return token.createAccessToken(my={})

@@ -4,7 +4,8 @@ pydantic
 python-dotenv 
 passlib[bcrypt] 
 python-jose[cryptography] 
-PyJWT 
+PyJWT
+cryptography
 numpy 
 pandas 
 requests
@@ -12,3 +13,5 @@ bcrypt
 pymongo
 datetime
 redis[hiredis]
+jwt
+python-jose
