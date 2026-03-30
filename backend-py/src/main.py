@@ -95,5 +95,5 @@ def login(user: userModel.loginReq):
     
 @server.get('/random-unit-testing-route')
 def unit_testing():
-    token = AccessToken("12234234","20m")
+    token = JWToken("12234234","20m")
     return token.createAccessToken(my={})
