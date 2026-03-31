@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from dotenv import load_dotenv
 import os
 from models import falseRes, userModel, trueRes
@@ -11,9 +11,9 @@ load_dotenv()
 mongo_uri = str(os.getenv("MONGO_URI"))
 gemini_api = str(os.getenv("GEMINI_API_KEY"))
 access_secret = str(os.getenv("ACCESS_TOKEN_SECRET_KEY"))
-access_duration = int(os.getenv("ACCESS_TOKEN_DURATION"))
+access_duration = int(os.getenv("ACCESS_TOKEN_DURATION", "60"))
 refresh_secret = str(os.getenv("REFRESH_TOKNE_SECRET_KEY"))
-refresh_duration = int(os.getenv("REFRESH_TOKEN_DURATION"))
+refresh_duration = int(os.getenv("REFRESH_TOKEN_DURATION", "30"))
 server = FastAPI()
 
 mongo_db = mongo.MongoDB(mongo_uri)
