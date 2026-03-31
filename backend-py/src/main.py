@@ -17,8 +17,8 @@ refresh_duration = int(os.getenv("REFRESH_TOKEN_DURATION"))
 server = FastAPI()
 
 mongo_db = mongo.MongoDB(mongo_uri)
-access_token = JWToken(secret=access_secret,duration=access_duration)
-refresh_token = JWToken(secret=refresh_secret,duration=refresh_secret)
+access_token = JWToken(secret=access_secret,duration=access_duration,typeof="access")
+refresh_token = JWToken(secret=refresh_secret,duration=refresh_duration,typeof="refresh")
 
 @server.get("/")
 def homeRoute():
@@ -35,11 +35,11 @@ def about():
 @server.post( "/sign-up", response_model = falseRes.ErrRes | trueRes.SuccessRes )
 async def signUp(user: userModel.UserRes):
     uuid = generateuuid.generateUUID()
-    user = user.model_dump()
-    userPass = password.Password(str(user["password"]))
+    user_model = user.model_dump()
+    userPass = password.Password(str(user_model["password"]))
     userPass.generate_salt()
-    user["password"] = userPass.hashPassword()
-    user = userModel.User(user_id=uuid,**user)
+    user_model["password"] = userPass.hashPassword()
+    user_model = userModel.User(user_id=uuid,**user_model)
     if( mongo_db.retreieveUserInfo(email = user.email)["anotherValid"] != None or mongo_db.retreieveUserInfo(phone_number = user.phone_number)["anotherValid"] != None ):
         return {
             "status" : 409,
@@ -50,7 +50,7 @@ async def signUp(user: userModel.UserRes):
                             }
         }
     else:
-        response = mongo_db.addUserInfoToDB(user)
+        response = mongo_db.addUserInfoToDB(user_model)
         return response
     
     
@@ -95,5 +95,6 @@ def login(user: userModel.loginReq):
     
 @server.get('/random-unit-testing-route')
 def unit_testing():
-    token = JWToken("12234234","20m")
-    return token.createAccessToken(my={})
+    return {
+        "message" : 'random something very bad'
+    }
