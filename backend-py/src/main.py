@@ -119,9 +119,9 @@ def refreshTokenGeneration( response : Response , request : Request )-> falseRes
                 payloadd = verificationStatus.anotherValid
                 payload_instance = payload.Payload.model_validate(payloadd)
                 newRf = refresh_token.createToken(payload_instance).anotherValid
+                redis_client.addRefreshTokenToRedis(str(newRf),userEmail)
                 response.headers["accesstoken"] = str(access_token.createToken(payload_instance).anotherValid)
                 response.headers["refreshtoken"] = str(newRf)
-                redis_client.addRefreshTokenToRedis(str(newRf),userEmail)
                 return trueRes.SuccessRes(
                     status = 200,
                     message = "Valid refresh token used",
