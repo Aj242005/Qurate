@@ -60,17 +60,15 @@ def signUp(user: userModel.UserRes):
         
 @server.post('/login', response_model= falseRes.ErrRes | trueRes.SuccessRes)
 def login(user: userModel.loginReq, response : Response, request : Request):
-    db_user = mongo_db.retreieveUserInfo(email=user.email)
-    if db_user is None:
+    db_user_res = mongo_db.retreieveUserInfo(email=user.email)
+    if not db_user_res or db_user_res.get("status") != 200 or db_user_res.get("anotherValid") is None:
         return falseRes.ErrRes(
             status = 401,
-            message = "user not found",
+            message = "user not found or database error",
             anotherValid = None
         )
-    db_user = db_user["anotherValid"]
-    
+    db_user = db_user_res["anotherValid"]
     password_byte = user.password.encode()
-    
     is_valid=password.Password.verifyPassword(password_byte,db_user["password"].encode('utf-8'))
     
     if not is_valid:
@@ -89,11 +87,11 @@ def login(user: userModel.loginReq, response : Response, request : Request):
             "name": name
         }
         payload_instance = payload.Payload.model_validate(payloadd)
-        response.headers["accessToken"] = str(access_token.createToken(payload_instance).anotherValid)
+        response.headers["accesstoken"] = str(access_token.createToken(payload_instance).anotherValid)
         rfToken = str(refresh_token.createToken(payload_instance).anotherValid)
-        if ( request.headers.get("refreshToken") is not None ):
-            redis_client.invalidateRefreshToken(refreshToken=str(request.headers.get("refreshToken")),email=email)
-        response.headers["refreshToken"] = rfToken
+        if ( request.headers.get("refreshtoken") is not None ):
+            redis_client.invalidateRefreshToken(refreshToken=str(request.headers.get("refreshtoken")),email=email)
+        response.headers["refreshtoken"] = rfToken
         redis_client.addRefreshTokenToRedis(rfToken,email)
         return trueRes.SuccessRes(
             status=200,
@@ -102,10 +100,9 @@ def login(user: userModel.loginReq, response : Response, request : Request):
         )
 
 
-
 @server.post('/refresh')
 def refreshTokenGeneration( response : Response , request : Request )-> falseRes.ErrRes | trueRes.SuccessRes:
-    rfToken = request.headers.get("refreshToken")
+    rfToken = request.headers.get("refreshtoken")
     if(rfToken is not None):
         verificationStatus = refresh_token.verifyToken(rfToken)
         if(verificationStatus.status == 200):
@@ -122,8 +119,8 @@ def refreshTokenGeneration( response : Response , request : Request )-> falseRes
                 payloadd = verificationStatus.anotherValid
                 payload_instance = payload.Payload.model_validate(payloadd)
                 newRf = refresh_token.createToken(payload_instance).anotherValid
-                response.headers["accessToken"] = str(access_token.createToken(payload_instance).anotherValid)
-                response.headers["refreshToken"] = str(newRf)
+                response.headers["accesstoken"] = str(access_token.createToken(payload_instance).anotherValid)
+                response.headers["refreshtoken"] = str(newRf)
                 redis_client.addRefreshTokenToRedis(str(newRf),userEmail)
                 return trueRes.SuccessRes(
                     status = 200,

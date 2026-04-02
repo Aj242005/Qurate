@@ -1,8 +1,7 @@
 from pymongo import MongoClient
-from models import falseRes, trueRes, userModel
+from models import userModel
 
 class MongoDB:
-    
     def __init__(self, uri: str):
         self.mongoclient = MongoClient(uri)
         self.database = self.mongoclient["main-db"]
@@ -11,7 +10,6 @@ class MongoDB:
     def addUserInfoToDB(self, userInfo: userModel.User):
         try:
             user_dict = userInfo.model_dump(mode="json")
-            
             response = self.collection.insert_one(user_dict)
             
             return {
@@ -27,7 +25,7 @@ class MongoDB:
                 "anotherValid": str(e)
             }
     
-    def retreieveUserInfo(self,**kwargs):
+    def retreieveUserInfo(self, **kwargs):
         try:
             response = self.collection.find_one(kwargs)
             
@@ -67,7 +65,9 @@ class MongoDB:
     
     def getCollectionInstance(self):
         return self.collection
+        
     def getMongoClient(self):
         return self.mongoclient
+        
     def getDatabaseInstance(self):
         return self.database

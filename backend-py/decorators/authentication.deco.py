@@ -6,7 +6,7 @@ def authentication_decorator(accessToken : JWToken):
     def decorator(childFunc):  
         @functools.wraps(childFunc)
         async def wrapper( request : Request, *args, **kwargs):
-            token = request.headers.get("accessToken")
+            token = request.headers.get("accesstoken")
             if( token is not None):
                 tokenStatus = accessToken.verifyToken(token)
                 if(tokenStatus.status == 200):
