@@ -33,22 +33,24 @@ def about():
             "message":"this is our smart database service where you can do everything without needing to actually interact with the database directly, just tell it what and how you want to get the work done"}
 
 @server.post( "/sign-up", response_model = falseRes.ErrRes | trueRes.SuccessRes )
-async def signUp(user: userModel.UserRes):
+def signUp(user: userModel.UserRes):
     uuid = generateuuid.generateUUID()
     user_model = user.model_dump()
     userPass = password.Password(str(user_model["password"]))
     userPass.generate_salt()
     user_model["password"] = userPass.hashPassword()
     user_model = userModel.User(user_id=uuid,**user_model)
-    if( mongo_db.retreieveUserInfo(email = user.email)["anotherValid"] != None or mongo_db.retreieveUserInfo(phone_number = user.phone_number)["anotherValid"] != None ):
-        return {
-            "status" : 409,
-            "message":"User with same email or number exists",
-            "anotherValid" : {
+    email_check = mongo_db.retreieveUserInfo(email=user.email)
+    phone_check = mongo_db.retreieveUserInfo(phone_number=user.phone_number)
+    if (email_check and email_check.get("anotherValid") is not None) or (phone_check and phone_check.get("anotherValid") is not None):
+        return falseRes.ErrRes(
+            status = 409,
+            message= "User with same email or phone number exists",
+            anotherValid=  {
                                 "email" : user.email,
                                 "phone_number" :user.phone_number
                             }
-        }
+        )
     else:
         response = mongo_db.addUserInfoToDB(user_model)
         return response
@@ -57,7 +59,7 @@ async def signUp(user: userModel.UserRes):
     
         
 @server.post('/login', response_model= falseRes.ErrRes | trueRes.SuccessRes)
-async def login(user: userModel.loginReq, response : Response, request : Request):
+def login(user: userModel.loginReq, response : Response, request : Request):
     db_user = mongo_db.retreieveUserInfo(email=user.email)
     if db_user is None:
         return falseRes.ErrRes(
@@ -102,24 +104,25 @@ async def login(user: userModel.loginReq, response : Response, request : Request
 
 
 @server.post('/refresh')
-async def refreshTokenGeneration( response : Response , request : Request )-> falseRes.ErrRes | trueRes.SuccessRes:
+def refreshTokenGeneration( response : Response , request : Request )-> falseRes.ErrRes | trueRes.SuccessRes:
     rfToken = request.headers.get("refreshToken")
     if(rfToken is not None):
         verificationStatus = refresh_token.verifyToken(rfToken)
-        if(verificationStatus.status is 200):
+        if(verificationStatus.status == 200):
             if verificationStatus.anotherValid is None:
                 return falseRes.ErrRes(
                     status = 401,
                     message = "Invalid token payload",
                     anotherValid = None
                 )
-            userEmail = str(verificationStatus.anotherValid.email)
+            userEmail = str(verificationStatus.anotherValid.get('email'))
             refreshTokenStatus = redis_client.checkRefreshTokenStatus(refreshToken=rfToken,email=userEmail)
             if(refreshTokenStatus.anotherValid):
                 redis_client.invalidateRefreshToken(rfToken,userEmail)
                 payloadd = verificationStatus.anotherValid
-                newRf = refresh_token.createToken(payloadd).anotherValid
-                response.headers["acccessToken"] = str(access_token.createToken(payloadd).anotherValid)
+                payload_instance = payload.Payload.model_validate(payloadd)
+                newRf = refresh_token.createToken(payload_instance).anotherValid
+                response.headers["accessToken"] = str(access_token.createToken(payload_instance).anotherValid)
                 response.headers["refreshToken"] = str(newRf)
                 redis_client.addRefreshTokenToRedis(str(newRf),userEmail)
                 return trueRes.SuccessRes(
