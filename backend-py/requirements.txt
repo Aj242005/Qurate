@@ -15,3 +15,5 @@ datetime
 redis[hiredis]
 jwt
 python-jose
+psycopg[binary]
+psycopg2
