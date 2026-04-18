@@ -17,3 +17,7 @@ jwt
 python-jose
 psycopg[binary]
 psycopg2
+langchain
+langchain_google_genai
+langchain_huggingface
+langgraph
