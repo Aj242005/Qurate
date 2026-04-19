@@ -34,7 +34,7 @@ export default function Dashboard() {
               <PanelLeft size={18} />
             </button>
             <div className="ml-3 flex items-center gap-2">
-              <img src="/favicon.svg" alt="Qurate" className="h-5 w-5" />
+              <img src="/favicon.svg" alt="Qurate" className="h-5 w-5 " />
               <span className="text-sm font-semibold text-gradient">Qurate</span>
             </div>
           </div>
