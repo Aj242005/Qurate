@@ -19,7 +19,7 @@ class Postgres:
             "password": password,
             "dbname": dbname,
             "autocommit": True,
-            "port" : 5433
+            "port" : 5432
         }
         self.connection = psycopg.connect(**self.basic_config)
         self.cursor = self.connection.cursor()
