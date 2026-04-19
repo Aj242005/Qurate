@@ -1,9 +1,19 @@
 from fastapi import Request
 from utils.jwt import JWToken
 import functools
+import inspect
 from models import falseRes
+
 def authentication_decorator(accessToken : JWToken):
-    def decorator(childFunc):  
+    def decorator(childFunc):
+        # Build a new signature that hides 'verifiedObj' from FastAPI
+        orig_sig = inspect.signature(childFunc)
+        filtered_params = [
+            p for name, p in orig_sig.parameters.items()
+            if name != "verifiedObj"
+        ]
+        new_sig = orig_sig.replace(parameters=filtered_params)
+
         @functools.wraps(childFunc)
         async def wrapper( request : Request, *args, **kwargs):
             token = request.headers.get("accesstoken")
@@ -11,7 +21,7 @@ def authentication_decorator(accessToken : JWToken):
                 tokenStatus = accessToken.verifyToken(token)
                 if(tokenStatus.status == 200):
                     #hence the status of the token is verified
-                    return await childFunc(*args,**kwargs, verifiedObj = tokenStatus.anotherValid)
+                    return await childFunc(request=request, *args, **kwargs, verifiedObj = tokenStatus.anotherValid)
                 else:
                     if(tokenStatus.status == 565):
                         return falseRes.ErrRes(
@@ -32,5 +42,7 @@ def authentication_decorator(accessToken : JWToken):
                     anotherValid = None
                 )
 
+        # Override the signature so FastAPI doesn't try to resolve 'verifiedObj'
+        wrapper.__signature__ = new_sig
         return wrapper
     return decorator

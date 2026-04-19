@@ -21,3 +21,5 @@ langchain
 langchain_google_genai
 langchain_huggingface
 langgraph
+openpyxl
+python-multipart

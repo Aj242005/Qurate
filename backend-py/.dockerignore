@@ -1,0 +1,42 @@
+# ── Virtual environments ─────────────
+nature/
+.venv/
+venv/
+env/
+ENV/
+
+# ── Python bytecode ──────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+
+# ── Git ──────────────────────────────
+.git
+.gitignore
+
+# ── Environment / secrets ────────────
+.env
+.env.*
+
+# ── IDE files ────────────────────────
+.idea/
+.vscode/
+*.swp
+
+# ── Docker (prevent recursion) ───────
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# ── Dev scripts ──────────────────────
+start.dev.py
+start.dev.sh
+
+# ── Misc ─────────────────────────────
+*.log
+*.egg-info/
+dist/
+build/
+htmlcov/
+.coverage
+.tox/
