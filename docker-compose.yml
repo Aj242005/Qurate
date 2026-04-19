@@ -1,0 +1,73 @@
+# ═══════════════════════════════════════════════════════════════
+# Qurate — Full Stack Docker Compose
+# ═══════════════════════════════════════════════════════════════
+# Usage:
+#   docker compose up --build       (start all services)
+#   docker compose up -d            (detached mode)
+#   docker compose down             (stop all)
+#   docker compose logs -f backend  (tail backend logs)
+# ═══════════════════════════════════════════════════════════════
+
+services:
+  # ── PostgreSQL ─────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: qurate-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── Redis ──────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: qurate-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── FastAPI Backend ────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend-py
+      dockerfile: Dockerfile
+    container_name: qurate-backend
+    restart: unless-stopped
+    ports:
+      - "1008:1008"
+    env_file:
+      - ./backend-py/.env
+    environment:
+      # Override host values to point to Docker service names
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      REDIS_HOST: redis
+      PORT: 1008
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+    driver: local
+  redisdata:
+    driver: local
