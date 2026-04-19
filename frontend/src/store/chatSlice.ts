@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
-import { apiPrompt, apiChatHistory, apiClearHistory } from '@/lib/api';
+import { apiPrompt, apiChatHistory, apiClearHistory, clearTokens } from '@/lib/api';
 
 export interface ChatMessage {
   id: string;
@@ -43,6 +43,14 @@ export const sendPrompt = createAsyncThunk(
 
     try {
       const res = await apiPrompt(prompt);
+
+      // Handle auth failures returned as HTTP 200 with error status in body
+      if (res.data.status === 404 || res.data.status === 401 || res.data.status === 410) {
+        clearTokens();
+        window.location.href = '/login';
+        return rejectWithValue('Session expired. Please log in again.');
+      }
+
       if (res.data && res.data.data) {
         const assistantMsg: ChatMessage = {
           id: nextId(),
@@ -68,6 +76,14 @@ export const fetchChatHistory = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const res = await apiChatHistory();
+
+      // Backend auth failure is returned as HTTP 200 with status 404 in body
+      if (res.data.status === 404 || res.data.status === 401 || res.data.status === 410) {
+        clearTokens();
+        window.location.href = '/login';
+        return rejectWithValue(res.data.message);
+      }
+
       if (res.data.anotherValid && Array.isArray(res.data.anotherValid)) {
         return res.data.anotherValid.map((item) => ({
           id: nextId(),

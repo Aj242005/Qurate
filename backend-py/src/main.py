@@ -27,9 +27,23 @@ postgres_user    = str(os.getenv("POSTGRES_USER", "defaultUser@Qurate"))
 server = FastAPI()
 
 # ── CORS ─────────────────────────────────────────────────────────────────────
+# NOTE: allow_origins=["*"] is incompatible with allow_credentials=True per the
+# CORS spec — browsers block it and custom response headers become unreadable.
+# List every frontend origin explicitly instead.
+FRONTEND_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:5175",
+    "http://localhost:3000",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:5174",
+    "http://127.0.0.1:5175",
+    "http://127.0.0.1:3000",
+]
+
 server.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],          # tighten this to your frontend origin in prod
+    allow_origins=FRONTEND_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

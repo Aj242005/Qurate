@@ -1,6 +1,6 @@
 // ── Native Fetch API wrapper for Qurate backend ──
 
-const BASE_URL = 'http://localhost:1008';
+const BASE_URL = "http://34.131.253.6:1008";
 
 type FetchOptions = {
   method?: string;
