@@ -5,11 +5,12 @@ import { store } from '@/store/store';
 import { Toaster } from 'react-hot-toast';
 import './index.css';
 import App from './App.tsx';
-
+import { Analytics } from '@vercel/analytics/react';
 // Apply saved theme on load
 const savedTheme = localStorage.getItem('qurate_theme') || 'dark';
 document.documentElement.classList.toggle('dark', savedTheme === 'dark');
 
+<Analytics />
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Provider store={store}>
