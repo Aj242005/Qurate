@@ -10,11 +10,12 @@ import { Analytics } from '@vercel/analytics/react';
 const savedTheme = localStorage.getItem('qurate_theme') || 'dark';
 document.documentElement.classList.toggle('dark', savedTheme === 'dark');
 
-<Analytics />
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Provider store={store}>
       <App />
+      <Analytics />
       <Toaster
         position="bottom-right"
         toastOptions={{
