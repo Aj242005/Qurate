@@ -1,5 +1,5 @@
 
-const BASE_URL = "https://34.131.229.124:1008/";
+const BASE_URL = "http://34.131.229.124:1008";
 
 type FetchOptions = {
   method?: string;
