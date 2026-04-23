@@ -26,39 +26,21 @@ postgres_user    = str(os.getenv("POSTGRES_USER", "defaultUser@Qurate"))
 
 server = FastAPI()
 
-# ── CORS ─────────────────────────────────────────────────────────────────────
-# NOTE: allow_origins=["*"] is incompatible with allow_credentials=True per the
-# CORS spec — browsers block it and custom response headers become unreadable.
-# List every frontend origin explicitly instead.
-FRONTEND_ORIGINS = [
-    "http://localhost:5173",
-    "http://localhost:5174",
-    "http://localhost:5175",
-    "http://localhost:3000",
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:5174",
-    "http://127.0.0.1:5175",
-    "http://127.0.0.1:3000",
-]
-
 server.add_middleware(
     CORSMiddleware,
-    allow_origins=FRONTEND_ORIGINS,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["accesstoken", "refreshtoken"],   # so frontend can read them
+    expose_headers=["accesstoken", "refreshtoken"], 
 )
 
-# ── Shared singletons ─────────────────────────────────────────────────────────
 mongo_db      = mongo.MongoDB(mongo_uri)
 access_token  = JWToken(secret=access_secret,  duration=access_duration,  typeof="access")
 refresh_token = JWToken(secret=refresh_secret, duration=refresh_duration, typeof="refresh")
 redis_client  = RedisBasic()
 llm_agent     = Agent(api_key=SecretStr(gemini_api))
 
-# Admin-level Postgres client (connects to default 'postgres' DB) used only
-# for provisioning new user databases at sign-up time.
 admin_postgres = Postgres(
     password=postgres_pass,
     dbname="postgres",
@@ -67,9 +49,7 @@ admin_postgres = Postgres(
 )
 
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
 def _open_user_db(email: str) -> Postgres:
-    """Open a Postgres connection scoped to the user's sandboxed database."""
     return Postgres(
         password=postgres_pass,
         dbname=_safe_db_name(email),
@@ -78,7 +58,6 @@ def _open_user_db(email: str) -> Postgres:
     )
 
 
-# ── Routes ────────────────────────────────────────────────────────────────────
 @server.get("/")
 def homeRoute():
     return {"status": 200, "message": "Welcome to Qurate Backend"}
@@ -120,10 +99,8 @@ def signUp(user: userModel.UserRes):
 
     response = mongo_db.addUserInfoToDB(user_model)
 
-    # ── NEW: provision sandboxed Postgres DB for this user ────────────────
     db_provision = admin_postgres.createUserDatabase(user.email)
     if db_provision.status != 201:
-        # Non-fatal — log it but don't fail the sign-up
         print(f"[WARN] Could not create sandbox DB for {user.email}: {db_provision.message}")
 
     return response
@@ -191,7 +168,6 @@ def refreshTokenGeneration(response: Response, request: Request) -> falseRes.Err
         return falseRes.ErrRes(status=404, message="Refresh Token not found in the headers", anotherValid=None)
 
 
-# ── /prompt2query ─────────────────────────────────────────────────────────────
 async def _prompt2query_handler( body: promptModel.PromptRequest, request: Request, verifiedObj: dict) -> dict | falseRes.ErrRes :
     """
     Core handler (decorated separately so the decorator wraps cleanly).
@@ -206,11 +182,9 @@ async def _prompt2query_handler( body: promptModel.PromptRequest, request: Reque
     email   = str(verifiedObj.get("email"))
     user_id = str(verifiedObj.get("user_id"))
 
-    # 1. Load chat history
     history_res = mongo_db.getChatHistory(user_id=user_id, limit=20)
     chat_history: list[dict] = history_res.get("anotherValid") or []
 
-    # 2. Open sandboxed DB
     try:
         user_db = _open_user_db(email)
     except Exception as e:
@@ -220,7 +194,6 @@ async def _prompt2query_handler( body: promptModel.PromptRequest, request: Reque
             anotherValid={"type": "text", "response": "Database connection failed. Please contact support."}
         )
 
-    # 3. Run agent pipeline
     try:
         db_name    = _safe_db_name(email)
         agent_res  = llm_agent.execute_agent_query(
@@ -232,7 +205,6 @@ async def _prompt2query_handler( body: promptModel.PromptRequest, request: Reque
     except Exception as e:
         user_db.close()
         error_msg = f"Agent error: {str(e)}"
-        # Still persist the failed conversation
         mongo_db.appendChatMessage(
             user_id=user_id,
             role="user",
@@ -253,7 +225,6 @@ async def _prompt2query_handler( body: promptModel.PromptRequest, request: Reque
 
     user_db.close()
 
-    # 4. Persist conversation
     typed_response = agent_res.anotherValid if agent_res.anotherValid else {"type": "text", "response": agent_res.message}
 
     mongo_db.appendChatMessage(
@@ -320,7 +291,6 @@ def unit_testing():
     return {"message": "random something very bad"}
 
 
-# ── /upload-excel ─────────────────────────────────────────────────────────────
 @server.post("/upload-excel")
 @authentication_decorator(access_token)
 async def upload_excel(request: Request, verifiedObj: dict, file: UploadFile = File(...)):
@@ -334,7 +304,6 @@ async def upload_excel(request: Request, verifiedObj: dict, file: UploadFile = F
 
     email = str(verifiedObj.get("email"))
 
-    # 1. Validate file type
     filename = file.filename or "upload.xlsx"
     if not filename.endswith((".xlsx", ".xls", ".csv")):
         return falseRes.ErrRes(
@@ -343,7 +312,6 @@ async def upload_excel(request: Request, verifiedObj: dict, file: UploadFile = F
             anotherValid=None
         )
 
-    # 2. Read file content
     contents = await file.read()
 
     try:
@@ -365,11 +333,9 @@ async def upload_excel(request: Request, verifiedObj: dict, file: UploadFile = F
             anotherValid=None
         )
 
-    # 3. Sanitize table name from filename
     raw_table = _re.sub(r"[^a-z0-9]", "_", filename.rsplit(".", 1)[0].lower())
     table_name = f"t_{raw_table}"[:63]
 
-    # 4. Map pandas dtypes to Postgres types
     def pg_type(dtype) -> str:
         s = str(dtype)
         if "int" in s:
@@ -382,7 +348,6 @@ async def upload_excel(request: Request, verifiedObj: dict, file: UploadFile = F
             return "TIMESTAMP"
         return "TEXT"
 
-    # Sanitize column names
     columns = []
     for col in df.columns:
         safe_col = _re.sub(r"[^a-z0-9_]", "_", str(col).lower().strip())
@@ -391,11 +356,9 @@ async def upload_excel(request: Request, verifiedObj: dict, file: UploadFile = F
         columns.append(safe_col)
     df.columns = columns  # type: ignore[assignment]
 
-    # 5. Build CREATE TABLE
     col_defs = ", ".join(f'"{c}" {pg_type(df[c].dtype)}' for c in columns)
     create_sql = f'CREATE TABLE IF NOT EXISTS "{table_name}" ({col_defs});'
 
-    # 6. Open user DB and execute
     try:
         user_db = _open_user_db(email)
     except Exception as e:
@@ -408,7 +371,6 @@ async def upload_excel(request: Request, verifiedObj: dict, file: UploadFile = F
     try:
         user_db.cursor.execute(create_sql)  # type: ignore[arg-type]
 
-        # Insert rows in batches
         if len(columns) > 0 and len(df) > 0:
             placeholders = ", ".join(["%s"] * len(columns))
             insert_sql = f'INSERT INTO "{table_name}" ({", ".join(f"{c}" for c in columns)}) VALUES ({placeholders})'

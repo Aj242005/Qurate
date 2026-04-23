@@ -7,7 +7,6 @@ import re
 def _safe_db_name(raw: str) -> str:
     """Convert an email/string to a safe lowercase postgres identifier."""
     name = re.sub(r"[^a-z0-9]", "_", raw.lower())
-    # Postgres identifiers max 63 chars; prefix 'u_' so it never starts with digit
     return ("u_" + name)[:63]
 
 
@@ -19,7 +18,7 @@ class Postgres:
             "password": password,
             "dbname": dbname,
             "autocommit": True,
-            "port" : 5433
+            "port" : 5432
         }
         self.connection = psycopg.connect(**self.basic_config)
         self.cursor = self.connection.cursor()
@@ -40,7 +39,6 @@ class Postgres:
                 anotherValid=e
             )
 
-    # ── NEW: create a sandboxed DB for a user ────────────────────────────────
     def createUserDatabase(self, email: str) -> trueRes.SuccessRes | falseRes.ErrRes:
         """
         Creates a new Postgres database named after the user's email (sanitised).
