@@ -14,16 +14,21 @@ from pydantic import SecretStr
 
 load_dotenv()
 
-mongo_uri        = str(os.getenv("MONGO_URI"))
-gemini_api       = str(os.getenv("GEMINI_API_KEY"))
-access_secret    = str(os.getenv("ACCESS_TOKEN_SECRET_KEY"))
-access_duration  = int(os.getenv("ACCESS_TOKEN_DURATION", "60"))
-refresh_secret   = str(os.getenv("REFRESH_TOKEN_SECRET_KEY"))
-refresh_duration = int(os.getenv("REFRESH_TOKEN_DURATION", "30"))
-postgres_pass    = str(os.getenv("POSTGRES_PASSWORD"))
-postgres_host    = str(os.getenv("POSTGRES_HOST", "localhost"))
-postgres_user    = str(os.getenv("POSTGRES_USER", "defaultUser@Qurate"))
-postgres_port    = int(os.getenv("POSTGRES_PORT", "5432"))
+def _clean_env(val: str | None) -> str:
+    if val is None:
+        return ""
+    return str(val).strip().strip('"').strip("'")
+
+mongo_uri        = _clean_env(os.getenv("MONGO_URI"))
+gemini_api       = _clean_env(os.getenv("GEMINI_API_KEY"))
+access_secret    = _clean_env(os.getenv("ACCESS_TOKEN_SECRET_KEY"))
+access_duration  = int(_clean_env(os.getenv("ACCESS_TOKEN_DURATION", "60")))
+refresh_secret   = _clean_env(os.getenv("REFRESH_TOKEN_SECRET_KEY"))
+refresh_duration = int(_clean_env(os.getenv("REFRESH_TOKEN_DURATION", "30")))
+postgres_pass    = _clean_env(os.getenv("POSTGRES_PASSWORD"))
+postgres_host    = _clean_env(os.getenv("POSTGRES_HOST", "localhost"))
+postgres_user    = _clean_env(os.getenv("POSTGRES_USER", "defaultUser@Qurate"))
+postgres_port    = int(_clean_env(os.getenv("POSTGRES_PORT", "5432")))
 
 server = FastAPI()
 
