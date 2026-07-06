@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Response, Request, UploadFile, File
+from fastapi import FastAPI, Response, Request, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import os
@@ -23,12 +23,13 @@ refresh_duration = int(os.getenv("REFRESH_TOKEN_DURATION", "30"))
 postgres_pass    = str(os.getenv("POSTGRES_PASSWORD"))
 postgres_host    = str(os.getenv("POSTGRES_HOST", "localhost"))
 postgres_user    = str(os.getenv("POSTGRES_USER", "defaultUser@Qurate"))
+postgres_port    = int(os.getenv("POSTGRES_PORT", "5432"))
 
 server = FastAPI()
 
 server.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origin_regex="https?://.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -143,7 +144,7 @@ def refreshTokenGeneration(response: Response, request: Request) -> falseRes.Err
         verificationStatus = refresh_token.verifyToken(rfToken)
         if verificationStatus.status == 200:
             if verificationStatus.anotherValid is None:
-                return falseRes.ErrRes(status=401, message="Invalid token payload", anotherValid=None)
+                raise HTTPException(status_code=401, detail="Invalid token payload")
 
             userEmail           = str(verificationStatus.anotherValid.get("email"))
             refreshTokenStatus  = redis_client.checkRefreshTokenStatus(refreshToken=rfToken, email=userEmail)
@@ -157,15 +158,14 @@ def refreshTokenGeneration(response: Response, request: Request) -> falseRes.Err
                 response.headers["refreshtoken"] = str(newRf)
                 return trueRes.SuccessRes(status=200, message="Valid refresh token used", anotherValid=None)
             else:
-                return falseRes.ErrRes(status=401, message="Invalid Refresh token used", anotherValid=None)
+                raise HTTPException(status_code=401, detail="Invalid Refresh token used")
         else:
-            return falseRes.ErrRes(
-                status=401,
-                message="Tampered or expired refresh token is provided by the client",
-                anotherValid=verificationStatus.anotherValid
+            raise HTTPException(
+                status_code=401,
+                detail="Tampered or expired refresh token is provided by the client"
             )
     else:
-        return falseRes.ErrRes(status=404, message="Refresh Token not found in the headers", anotherValid=None)
+        raise HTTPException(status_code=404, detail="Refresh Token not found in the headers")
 
 
 async def _prompt2query_handler( body: promptModel.PromptRequest, request: Request, verifiedObj: dict) -> dict | falseRes.ErrRes :

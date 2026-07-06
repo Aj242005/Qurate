@@ -1,5 +1,6 @@
 import redis
 import os
+import time
 from models import userModel, falseRes, trueRes
 
 class RedisBasic:
@@ -25,7 +26,9 @@ class RedisBasic:
 
     def invalidateRefreshToken(self, refreshToken: str, email: str) -> falseRes.ErrRes | trueRes.SuccessRes:
         try:
-            response = self.redisClient.hset(f'refresh:{email}', mapping={refreshToken: "False"})
+            # Store the current timestamp as string to allow a grace period for concurrent rotation requests
+            now_str = str(time.time())
+            response = self.redisClient.hset(f'refresh:{email}', mapping={refreshToken: now_str})
             self.redisClient.expire(f'refresh:{email}', 604800)
             return trueRes.SuccessRes(
                 status=201,
@@ -42,10 +45,21 @@ class RedisBasic:
     def checkRefreshTokenStatus(self, refreshToken: str, email: str) -> falseRes.ErrRes | trueRes.SuccessRes:
         try:
             response = self.redisClient.hget(f'refresh:{email}', refreshToken)
+            is_valid = False
+            if response in ("True", "true", "1"):
+                is_valid = True
+            elif response is not None:
+                try:
+                    # Valid if invalidated within the 15-second grace period
+                    invalidated_at = float(response)
+                    is_valid = (time.time() - invalidated_at) < 15.0
+                except ValueError:
+                    is_valid = False
+            
             return trueRes.SuccessRes(
                 status=200,
                 message="Status of refresh token's validity",
-                anotherValid=True if response in ("True", "true", "1") else False
+                anotherValid=is_valid
             )
         except Exception as e:
             return falseRes.ErrRes(

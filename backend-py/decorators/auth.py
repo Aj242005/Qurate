@@ -1,4 +1,4 @@
-from fastapi import Request
+from fastapi import Request, HTTPException
 from utils.jwt import JWToken
 import functools
 import inspect
@@ -24,22 +24,19 @@ def authentication_decorator(accessToken : JWToken):
                     return await childFunc(request=request, *args, **kwargs, verifiedObj = tokenStatus.anotherValid)
                 else:
                     if(tokenStatus.status == 565):
-                        return falseRes.ErrRes(
-                            status = 410,
-                            message= "Your access token was authentic but expired translate to /refresh route to ask for a new one with your unexpired refresh token",
-                            anotherValid = None
+                        raise HTTPException(
+                            status_code=410,
+                            detail="Your access token was authentic but expired translate to /refresh route to ask for a new one with your unexpired refresh token"
                         )
                     elif(tokenStatus.status == 566):
-                        return falseRes.ErrRes(
-                            status = 401,
-                            message = "The access token have been tampered and redirect it to the /login route cause the tampering may lead to data leak and also invalidate the previously create refresh token",
-                            anotherValid= None
+                        raise HTTPException(
+                            status_code=401,
+                            detail="The access token have been tampered and redirect it to the /login route cause the tampering may lead to data leak and also invalidate the previously create refresh token"
                         )
             else:
-                return falseRes.ErrRes(
-                    status = 404,
-                    message = "No access token found kindly redirect to /login",
-                    anotherValid = None
+                raise HTTPException(
+                    status_code=401,
+                    detail="No access token found kindly redirect to /login"
                 )
 
         # Override the signature so FastAPI doesn't try to resolve 'verifiedObj'

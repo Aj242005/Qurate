@@ -97,7 +97,7 @@ export async function apiFetch<T = unknown>(
   }
 
   // Handle tampered/invalid token
-  if (res.status === 401) {
+  if (res.status === 401 && path !== '/login') {
     clearTokens();
     window.location.href = '/login';
     return { ok: false, status: 401, data: {} as T, headers: res.headers };
