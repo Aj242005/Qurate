@@ -16,7 +16,7 @@ redis[hiredis]
 jwt
 python-jose
 psycopg[binary]
-psycopg2
+psycopg2-binary
 langchain
 langchain_google_genai
 langchain_huggingface

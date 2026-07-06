@@ -1,6 +1,5 @@
-// ── Native Fetch API wrapper for Qurate backend ──
 
-const BASE_URL = import.meta.env.VITE_BASE_URL || 'http://localhost:1008';
+const BASE_URL = import.meta.env.VITE_BASE_URL || "https://qurate-backend.duckdns.org";
 
 type FetchOptions = {
   method?: string;

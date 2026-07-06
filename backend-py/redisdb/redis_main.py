@@ -1,8 +1,10 @@
 import redis
+import os
 from models import userModel, falseRes, trueRes
 
 class RedisBasic:
-    def __init__(self, host="localhost"):
+    def __init__(self, host=None):
+        host = host or os.getenv("REDIS_HOST", "localhost")
         self.redisClient = redis.Redis(host=host, decode_responses=True)
     
     def addRefreshTokenToRedis(self, refreshToken: str, email: str) -> falseRes.ErrRes | trueRes.SuccessRes:
