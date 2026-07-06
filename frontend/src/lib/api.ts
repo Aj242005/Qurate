@@ -1,5 +1,7 @@
 
-const BASE_URL = import.meta.env.VITE_BASE_URL || "https://qurate-backend.duckdns.org";
+const BASE_URL = import.meta.env.VITE_BASE_URL || (import.meta.env.PROD 
+  ? 'http://34.131.253.6:1008' 
+  : 'http://localhost:1008');
 
 type FetchOptions = {
   method?: string;
