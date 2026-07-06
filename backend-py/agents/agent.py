@@ -123,7 +123,7 @@ class Agent:
         self._llm = ChatGoogleGenerativeAI(
             model="gemini-2.5-flash",
             api_key=self._api,
-            temperature=0.2, 
+            temperature=0.7, 
         )
         self.security_agent = SecurityAgent(self._llm)
 
