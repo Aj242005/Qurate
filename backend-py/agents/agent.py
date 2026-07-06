@@ -121,7 +121,7 @@ class Agent:
     def __init__(self, api_key: SecretStr):
         self._api = api_key
         self._llm = ChatGoogleGenerativeAI(
-            model="gemini-3-flash-preview",
+            model="gemini-2.5-flash",
             api_key=self._api,
             temperature=0.2, 
         )
