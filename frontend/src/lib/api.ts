@@ -53,6 +53,18 @@ async function tryRefresh(): Promise<boolean> {
   }
 }
 
+let isRefreshing = false;
+let refreshSubscribers: ((token: string) => void)[] = [];
+
+function subscribeTokenRefresh(cb: (token: string) => void) {
+  refreshSubscribers.push(cb);
+}
+
+function onRefreshed(token: string) {
+  refreshSubscribers.forEach((cb) => cb(token));
+  refreshSubscribers = [];
+}
+
 export async function apiFetch<T = unknown>(
   path: string,
   options: FetchOptions = {}
@@ -83,17 +95,29 @@ export async function apiFetch<T = unknown>(
 
   // Handle expired access token — try refresh
   if (res.status === 410) {
-    const refreshed = await tryRefresh();
-    if (refreshed) {
-      const { accessToken: newToken } = getTokens();
-      headers['accesstoken'] = newToken;
-      fetchOpts.headers = headers;
-      res = await fetch(`${BASE_URL}${path}`, fetchOpts);
-    } else {
-      clearTokens();
-      window.location.href = '/login';
-      return { ok: false, status: 401, data: {} as T, headers: res.headers };
+    if (!isRefreshing) {
+      isRefreshing = true;
+      tryRefresh().then((refreshed) => {
+        isRefreshing = false;
+        if (refreshed) {
+          const { accessToken: newToken } = getTokens();
+          onRefreshed(newToken);
+        } else {
+          clearTokens();
+          window.location.href = '/login';
+        }
+      });
     }
+
+    const retryOriginalRequest = new Promise<Response>((resolve) => {
+      subscribeTokenRefresh((token) => {
+        headers['accesstoken'] = token;
+        fetchOpts.headers = headers;
+        resolve(fetch(`${BASE_URL}${path}`, fetchOpts));
+      });
+    });
+
+    res = await retryOriginalRequest;
   }
 
   // Handle tampered/invalid token
