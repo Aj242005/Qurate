@@ -36,7 +36,6 @@ export default function SignUp() {
       })
     );
     if (signUpUser.fulfilled.match(result)) {
-      // Auto-login after signup
       const loginResult = await dispatch(loginUser({ email: form.email, password: form.password }));
       if (loginUser.fulfilled.match(loginResult)) {
         navigate('/dashboard');
@@ -44,11 +43,13 @@ export default function SignUp() {
     }
   };
 
+  const inputClass =
+    'focus-ring w-full rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] outline-none transition-colors focus:border-[var(--primary)]';
+
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-[var(--background)] bg-gradient-mesh px-6 py-20">
-      {/* Top bar */}
-      <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4">
-        <NavLink to="/" className="flex items-center gap-2">
+    <div className="relative flex min-h-screen items-center justify-center bg-[var(--background)] bg-gradient-mesh px-6 py-24">
+      <div className="fixed left-0 right-0 top-0 z-50 flex items-center justify-between px-6 py-4">
+        <NavLink to="/" className="focus-ring flex items-center gap-2 rounded-xl">
           <img src="/favicon.svg" alt="Qurate" className="h-7 w-7" />
           <span className="text-xl font-bold text-gradient">Qurate</span>
         </NavLink>
@@ -56,15 +57,15 @@ export default function SignUp() {
       </div>
 
       <motion.div
-        initial={{ opacity: 0, y: 30, scale: 0.97 }}
+        initial={{ opacity: 0, y: 24, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.5 }}
-        className="glass-strong w-full max-w-md rounded-3xl p-8"
+        transition={{ duration: 0.45, ease: 'easeOut' }}
+        className="product-shadow w-full max-w-lg rounded-3xl border border-[var(--border)] bg-[var(--card)] p-8"
       >
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold">Create your account</h1>
+          <h1 className="text-2xl font-black tracking-[-0.02em]">Create your workspace</h1>
           <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-            Start querying your data in seconds
+            Start with a prompt, then bring your database or spreadsheet.
           </p>
         </div>
 
@@ -72,16 +73,16 @@ export default function SignUp() {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-4 rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400"
+            className="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-500"
+            role="alert"
           >
             {error}
           </motion.div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Name */}
           <div>
-            <label htmlFor="signup-name" className="mb-1.5 block text-sm font-medium text-[var(--muted-foreground)]">Name</label>
+            <label htmlFor="signup-name" className="mb-1.5 block text-sm font-semibold">Name</label>
             <div className="relative">
               <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)]" />
               <input
@@ -91,15 +92,14 @@ export default function SignUp() {
                 onChange={(e) => update('name', e.target.value)}
                 required
                 maxLength={50}
-                placeholder="John Doe"
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 pl-10 pr-4 text-sm text-[var(--foreground)] placeholder-[var(--muted-foreground)]/50 outline-none transition-colors focus:border-[var(--q-purple)] focus:ring-1 focus:ring-[var(--q-purple)]"
+                placeholder="Aarav Mehta"
+                className={`${inputClass} pl-10 pr-4`}
               />
             </div>
           </div>
 
-          {/* Email */}
           <div>
-            <label htmlFor="signup-email" className="mb-1.5 block text-sm font-medium text-[var(--muted-foreground)]">Email</label>
+            <label htmlFor="signup-email" className="mb-1.5 block text-sm font-semibold">Email</label>
             <div className="relative">
               <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)]" />
               <input
@@ -109,15 +109,14 @@ export default function SignUp() {
                 onChange={(e) => update('email', e.target.value)}
                 required
                 placeholder="you@example.com"
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 pl-10 pr-4 text-sm text-[var(--foreground)] placeholder-[var(--muted-foreground)]/50 outline-none transition-colors focus:border-[var(--q-purple)] focus:ring-1 focus:ring-[var(--q-purple)]"
+                className={`${inputClass} pl-10 pr-4`}
               />
             </div>
           </div>
 
-          {/* Phone & Gender */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label htmlFor="signup-phone" className="mb-1.5 block text-sm font-medium text-[var(--muted-foreground)]">Phone</label>
+              <label htmlFor="signup-phone" className="mb-1.5 block text-sm font-semibold">Phone</label>
               <div className="relative">
                 <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)]" />
                 <input
@@ -128,29 +127,28 @@ export default function SignUp() {
                   required
                   placeholder="9876543210"
                   maxLength={10}
-                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 pl-10 pr-4 text-sm text-[var(--foreground)] placeholder-[var(--muted-foreground)]/50 outline-none transition-colors focus:border-[var(--q-purple)] focus:ring-1 focus:ring-[var(--q-purple)]"
+                  className={`${inputClass} pl-10 pr-4`}
                 />
               </div>
             </div>
             <div>
-              <label htmlFor="signup-gender" className="mb-1.5 block text-sm font-medium text-[var(--muted-foreground)]">Gender</label>
+              <label htmlFor="signup-gender" className="mb-1.5 block text-sm font-semibold">Gender</label>
               <select
                 id="signup-gender"
                 value={form.gender}
                 onChange={(e) => update('gender', e.target.value)}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 px-4 text-sm text-[var(--foreground)] outline-none transition-colors focus:border-[var(--q-purple)] focus:ring-1 focus:ring-[var(--q-purple)] appearance-none"
+                className={`${inputClass} px-4`}
               >
                 <option value="male">Male</option>
                 <option value="female">Female</option>
-                <option value="others">Others</option>
+                <option value="others">Other</option>
                 <option value="do not specify">Prefer not to say</option>
               </select>
             </div>
           </div>
 
-          {/* Password */}
           <div>
-            <label htmlFor="signup-password" className="mb-1.5 block text-sm font-medium text-[var(--muted-foreground)]">Password</label>
+            <label htmlFor="signup-password" className="mb-1.5 block text-sm font-semibold">Password</label>
             <div className="relative">
               <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)]" />
               <input
@@ -160,52 +158,48 @@ export default function SignUp() {
                 onChange={(e) => update('password', e.target.value)}
                 required
                 minLength={6}
-                placeholder="••••••••"
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 pl-10 pr-11 text-sm text-[var(--foreground)] placeholder-[var(--muted-foreground)]/50 outline-none transition-colors focus:border-[var(--q-purple)] focus:ring-1 focus:ring-[var(--q-purple)]"
+                placeholder="At least 6 characters"
+                className={`${inputClass} pl-10 pr-12`}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                className="focus-ring absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>
 
-          {/* Purpose (optional) */}
           <div>
-            <label htmlFor="signup-purpose" className="mb-1.5 block text-sm font-medium text-[var(--muted-foreground)]">
-              Purpose <span className="text-[var(--muted-foreground)]/50">(optional)</span>
+            <label htmlFor="signup-purpose" className="mb-1.5 block text-sm font-semibold">
+              Purpose <span className="font-normal text-[var(--muted-foreground)]">(optional)</span>
             </label>
             <input
               id="signup-purpose"
               type="text"
               value={form.purpose}
               onChange={(e) => update('purpose', e.target.value)}
-              placeholder="Data analytics, reporting..."
-              className="w-full rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 px-4 text-sm text-[var(--foreground)] placeholder-[var(--muted-foreground)]/50 outline-none transition-colors focus:border-[var(--q-purple)] focus:ring-1 focus:ring-[var(--q-purple)]"
+              placeholder="Reporting, operations, sales analysis"
+              className={`${inputClass} px-4`}
             />
           </div>
 
-          <GradientButton
-            type="submit"
-            disabled={loading}
-            className="w-full justify-center disabled:opacity-50"
-          >
+          <GradientButton type="submit" disabled={loading} className="w-full">
             {loading ? (
               <span className="flex items-center justify-center gap-2">
-                <Loader2 size={16} className="animate-spin" /> Creating account...
+                <Loader2 size={16} className="animate-spin" /> Creating account
               </span>
             ) : (
-              'Create Account'
+              'Create account'
             )}
           </GradientButton>
         </form>
 
         <p className="mt-6 text-center text-sm text-[var(--muted-foreground)]">
           Already have an account?{' '}
-          <NavLink to="/login" className="font-medium text-[var(--q-purple)] hover:underline">
+          <NavLink to="/login" className="focus-ring rounded-md font-semibold text-[var(--primary)] hover:underline">
             Sign in
           </NavLink>
         </p>

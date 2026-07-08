@@ -30,7 +30,7 @@ export default function MacbookScroll() {
     let timer: any;
     let typingInterval: any;
     let charIndex = 0;
-    const prompt = "Show our Q1 performance analysis...";
+    const prompt = "Compare Q1 revenue by region...";
 
     const runSimulation = () => {
       setStep('empty');
@@ -74,11 +74,11 @@ export default function MacbookScroll() {
         style={{ opacity }}
         className="mx-auto mb-16 max-w-2xl text-center"
       >
-        <h2 className="text-3xl font-bold md:text-5xl">
-          See it in <span className="text-gradient">action</span>
+          <h2 className="text-3xl font-black tracking-[-0.025em] md:text-5xl">
+          Watch Qurate translate intent into answers
         </h2>
         <p className="mt-4 text-[var(--muted-foreground)]">
-          A conversational interface that transforms how you interact with your data
+          A refined query flow with voice, tables, charts, and spreadsheet import in one place.
         </p>
       </motion.div>
 
@@ -173,9 +173,9 @@ export default function MacbookScroll() {
                       </p>
                       <div className="mt-4 flex flex-col gap-1.5 w-full max-w-[280px]">
                         {[
-                          'Show all tables in my database',
-                          'Create a new employees table',
-                          'Summarize my sales data',
+                          'List available tables',
+                          'Create a table from my sales file',
+                          'Summarize this quarter by region',
                         ].map((suggestion) => (
                           <div
                             key={suggestion}
@@ -191,7 +191,7 @@ export default function MacbookScroll() {
                       {/* User message */}
                       <div className="flex justify-end">
                         <div className="rounded-2xl rounded-tr-md bg-gradient-brand px-3.5 py-2 max-w-[80%] shadow-sm">
-                          <p className="text-xs text-white">Show our Q1 performance analysis...</p>
+                          <p className="text-xs text-white">Compare Q1 revenue by region...</p>
                         </div>
                       </div>
                       {/* Thinking response */}
@@ -213,7 +213,7 @@ export default function MacbookScroll() {
                       {/* User message */}
                       <div className="flex justify-end">
                         <div className="rounded-2xl rounded-tr-md bg-gradient-brand px-3.5 py-2 max-w-[80%] shadow-sm">
-                          <p className="text-xs text-white">Show our Q1 performance analysis...</p>
+                          <p className="text-xs text-white">Compare Q1 revenue by region...</p>
                         </div>
                       </div>
                       

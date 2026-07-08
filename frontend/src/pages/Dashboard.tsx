@@ -29,7 +29,8 @@ export default function Dashboard() {
           <div className="flex items-center border-b border-[var(--border)] px-4 py-3">
             <button
               onClick={() => dispatch(toggleSidebar())}
-              className="flex h-9 w-9 items-center justify-center rounded-xl text-[var(--muted-foreground)] hover:bg-[var(--accent)] hover:text-[var(--foreground)]"
+              className="focus-ring flex h-10 w-10 items-center justify-center rounded-xl text-[var(--muted-foreground)] hover:bg-[var(--accent)] hover:text-[var(--foreground)]"
+              aria-label="Open sidebar"
             >
               <PanelLeft size={18} />
             </button>

@@ -25,14 +25,14 @@ export default function TextMessage({ content, role }: TextMessageProps) {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.22, ease: 'easeOut' }}
       className={`flex ${role === 'user' ? 'justify-end' : 'justify-start'}`}
     >
       <div
-        className={`group relative max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+        className={`group relative max-w-[86%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
           role === 'user'
-            ? 'rounded-tr-md bg-gradient-brand text-white'
-            : 'glass rounded-tl-md text-[var(--foreground)]'
+            ? 'rounded-tr-md bg-[var(--primary)] text-white'
+            : 'rounded-tl-md border border-[var(--border)] bg-[var(--card)] text-[var(--foreground)]'
         }`}
       >
         <p className="whitespace-pre-wrap">{content}</p>
@@ -40,8 +40,9 @@ export default function TextMessage({ content, role }: TextMessageProps) {
         {role === 'assistant' && (
           <button
             onClick={speak}
-            className="absolute -bottom-3 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-[var(--card)] border border-[var(--border)] opacity-0 transition-opacity group-hover:opacity-100"
+            className="focus-ring absolute -bottom-3 right-2 flex h-7 w-7 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--card)] opacity-0 transition-opacity group-hover:opacity-100"
             title="Read aloud"
+            aria-label="Read assistant response aloud"
           >
             <Volume2 size={12} className="text-[var(--muted-foreground)]" />
           </button>

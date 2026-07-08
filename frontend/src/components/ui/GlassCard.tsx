@@ -17,13 +17,13 @@ export default function GlassCard({ children, className, hover = false, glow = '
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-50px' }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
-      whileHover={hover ? { y: -4, transition: { duration: 0.2 } } : undefined}
+      whileHover={hover ? { y: -3, transition: { duration: 0.2 } } : undefined}
       onClick={onClick}
       className={cn(
         'glass rounded-2xl p-6',
         glow === 'purple' && 'glow-purple',
         glow === 'cyan' && 'glow-cyan',
-        hover && 'cursor-pointer transition-shadow duration-300',
+        hover && 'cursor-pointer transition-colors duration-200 hover:border-[var(--primary)]/40',
         className
       )}
     >

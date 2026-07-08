@@ -44,16 +44,16 @@ export default function TableMessage({ data }: TableMessageProps) {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.22, ease: 'easeOut' }}
       className="flex justify-start"
     >
-      <div className="glass max-w-[90%] rounded-2xl rounded-tl-md p-4">
+      <div className="max-w-[94%] rounded-2xl rounded-tl-md border border-[var(--border)] bg-[var(--card)] p-4">
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-xs font-medium text-[var(--q-purple)]">Table Result</span>
+          <span className="text-xs font-semibold text-[var(--primary)]">Table result</span>
           <span className="text-xs text-[var(--muted-foreground)]">{rows.length} rows</span>
         </div>
 
-        <div className="overflow-x-auto rounded-lg border border-[var(--border)]">
+        <div className="overflow-x-auto rounded-xl border border-[var(--border)]">
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="border-b border-[var(--border)] bg-[var(--accent)]/50">
@@ -61,7 +61,8 @@ export default function TableMessage({ data }: TableMessageProps) {
                   <th
                     key={i}
                     onClick={() => handleSort(i)}
-                    className="cursor-pointer whitespace-nowrap px-4 py-2.5 font-semibold text-[var(--foreground)] transition-colors hover:text-[var(--q-purple)]"
+                    className="cursor-pointer whitespace-nowrap px-4 py-2.5 font-semibold text-[var(--foreground)] transition-colors hover:text-[var(--primary)]"
+                    scope="col"
                   >
                     <span className="flex items-center gap-1.5">
                       {col}
@@ -81,7 +82,7 @@ export default function TableMessage({ data }: TableMessageProps) {
                 >
                   {row.map((cell, ci) => (
                     <td key={ci} className="whitespace-nowrap px-4 py-2 text-[var(--muted-foreground)]">
-                      {cell !== null && cell !== undefined ? String(cell) : '—'}
+                      {cell !== null && cell !== undefined ? String(cell) : '-'}
                     </td>
                   ))}
                 </tr>

@@ -1,2 +1,4 @@
 .vscode
 deploy_gcp.sh
+
+.codex

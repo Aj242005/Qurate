@@ -10,6 +10,31 @@ export interface ChatMessage {
   timestamp: string;
 }
 
+type ApiMessageRole = 'user' | 'assistant';
+
+type HistoryResponsePayload = {
+  type?: 'text' | 'table' | 'graph';
+  response?: unknown;
+  data?: unknown;
+  content?: unknown;
+};
+
+type HistoryEntry = {
+  id?: string | number;
+  role?: ApiMessageRole;
+  sender?: ApiMessageRole;
+  content?: unknown;
+  message?: unknown;
+  prompt?: unknown;
+  query?: unknown;
+  question?: unknown;
+  answer?: unknown;
+  response?: HistoryResponsePayload | string | unknown;
+  type?: 'text' | 'table' | 'graph';
+  timestamp?: string;
+  created_at?: string;
+};
+
 interface ChatState {
   messages: ChatMessage[];
   isLoading: boolean;
@@ -25,6 +50,115 @@ const initialState: ChatState = {
 let messageIdCounter = 0;
 function nextId() {
   return `msg_${Date.now()}_${messageIdCounter++}`;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function messageContent(value: unknown) {
+  if (typeof value === 'string') return value;
+  if (value === null || value === undefined) return '';
+  return JSON.stringify(value);
+}
+
+function responseType(value: unknown): ChatMessage['type'] {
+  if (isRecord(value) && (value.type === 'table' || value.type === 'graph' || value.type === 'text')) {
+    return value.type;
+  }
+  return 'text';
+}
+
+function responsePayload(value: unknown) {
+  if (isRecord(value)) {
+    if ('response' in value) return value.response;
+    if ('data' in value) return value.data;
+    if ('content' in value) return value.content;
+  }
+  return value;
+}
+
+function toChatMessage(entry: HistoryEntry, fallbackRole?: ApiMessageRole): ChatMessage {
+  const role = entry.role || entry.sender || fallbackRole || 'assistant';
+  const rawResponse = entry.response ?? entry.answer;
+  const normalizedResponse = role === 'assistant'
+    ? responsePayload(rawResponse ?? entry.content ?? entry.message)
+    : (entry.content ?? entry.message ?? entry.prompt ?? entry.query ?? entry.question);
+  const type = role === 'assistant' ? responseType(rawResponse ?? entry) : 'text';
+  const content = messageContent(
+    entry.content ??
+    entry.message ??
+    (role === 'user' ? (entry.prompt ?? entry.query ?? entry.question) : normalizedResponse)
+  );
+
+  return {
+    id: String(entry.id || nextId()),
+    role,
+    content,
+    type,
+    response: normalizedResponse,
+    timestamp: entry.timestamp || entry.created_at || new Date().toISOString(),
+  };
+}
+
+function extractHistoryItems(data: unknown): unknown[] {
+  if (Array.isArray(data)) return data;
+  if (!isRecord(data)) return [];
+
+  const candidates = [
+    data.anotherValid,
+    data.data,
+    data.messages,
+    data.history,
+    data.chat_history,
+    data.chats,
+  ];
+
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate)) return candidate;
+    if (isRecord(candidate)) {
+      const nested = extractHistoryItems(candidate);
+      if (nested.length > 0) return nested;
+    }
+  }
+
+  return [];
+}
+
+function normalizeHistory(data: unknown): ChatMessage[] {
+  return extractHistoryItems(data).flatMap((item) => {
+    if (!isRecord(item)) return [];
+    const entry = item as HistoryEntry;
+
+    if ((entry.prompt || entry.query || entry.question) && (entry.response || entry.answer)) {
+      return [
+        toChatMessage(
+          {
+            id: `${entry.id || nextId()}_user`,
+            role: 'user',
+            content: entry.prompt ?? entry.query ?? entry.question,
+            timestamp: entry.timestamp,
+            created_at: entry.created_at,
+          },
+          'user'
+        ),
+        toChatMessage(
+          {
+            id: `${entry.id || nextId()}_assistant`,
+            role: 'assistant',
+            content: entry.answer,
+            response: entry.response ?? entry.answer,
+            type: entry.type,
+            timestamp: entry.timestamp,
+            created_at: entry.created_at,
+          },
+          'assistant'
+        ),
+      ];
+    }
+
+    return [toChatMessage(entry)];
+  });
 }
 
 export const sendPrompt = createAsyncThunk(
@@ -84,17 +218,7 @@ export const fetchChatHistory = createAsyncThunk(
         return rejectWithValue(res.data.message);
       }
 
-      if (res.data.anotherValid && Array.isArray(res.data.anotherValid)) {
-        return res.data.anotherValid.map((item) => ({
-          id: nextId(),
-          role: item.role,
-          content: item.content,
-          type: item.response?.type || 'text',
-          response: item.response?.response || item.content,
-          timestamp: item.timestamp,
-        })) as ChatMessage[];
-      }
-      return [];
+      return normalizeHistory(res.data);
     } catch {
       return rejectWithValue('Failed to fetch history');
     }

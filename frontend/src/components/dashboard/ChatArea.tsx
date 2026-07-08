@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useSelector } from 'react-redux';
 import { motion } from 'motion/react';
-import { Sparkles } from 'lucide-react';
+import { Database, FileSpreadsheet, Mic, Sparkles } from 'lucide-react';
 import type { RootState } from '@/store/store';
 import TextMessage from './TextMessage';
 import TableMessage from './TableMessage';
@@ -25,41 +25,33 @@ export default function ChatArea() {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
-          className="text-center"
+          className="w-full max-w-2xl text-center"
         >
-          {/* Animated gradient orb */}
-          <motion.div
-            animate={{
-              scale: [1, 1.08, 1],
-              rotate: [0, 5, -5, 0],
-            }}
-            transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-            className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-gradient-brand shadow-lg shadow-purple-500/20"
-          >
-            <Sparkles size={32} className="text-white" />
-          </motion.div>
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl border border-[var(--border)] bg-[var(--card)]">
+            <Sparkles size={28} className="text-[var(--primary)]" />
+          </div>
 
-          <h2 className="text-2xl font-bold">
+          <h2 className="text-2xl font-black tracking-[-0.02em]">
             Good {getGreeting()}, {user?.name || 'there'}
           </h2>
-          <p className="mt-2 text-[var(--muted-foreground)]">
-            How can I help you with your data today?
+          <p className="mx-auto mt-2 max-w-xl leading-7 text-[var(--muted-foreground)]">
+            Ask in your own words, speak in your preferred language, or import an Excel file to create a queryable database.
           </p>
 
-          {/* Quick suggestions */}
-          <div className="mt-8 flex flex-wrap justify-center gap-2">
+          <div className="mt-8 grid gap-3 sm:grid-cols-3">
             {[
-              'Show all tables in my database',
-              'Create a new employees table',
-              'Summarize my sales data',
+              { icon: Database, text: 'Show all tables in my database' },
+              { icon: FileSpreadsheet, text: 'Create a table from my sales file' },
+              { icon: Mic, text: 'Summarize revenue in Hindi' },
             ].map((suggestion) => (
               <motion.button
-                key={suggestion}
-                whileHover={{ scale: 1.03 }}
+                key={suggestion.text}
+                whileHover={{ y: -2 }}
                 whileTap={{ scale: 0.97 }}
-                className="glass rounded-xl px-4 py-2 text-sm text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)]"
+                className="focus-ring rounded-2xl border border-[var(--border)] bg-[var(--card)] p-4 text-left text-sm text-[var(--muted-foreground)] transition-colors hover:border-[var(--primary)]/40 hover:text-[var(--foreground)]"
               >
-                {suggestion}
+                <suggestion.icon size={18} className="mb-3 text-[var(--primary)]" />
+                {suggestion.text}
               </motion.button>
             ))}
           </div>

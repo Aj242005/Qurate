@@ -27,9 +27,8 @@ export default function Login() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-[var(--background)] bg-gradient-mesh px-6">
-      {/* Top bar */}
-      <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4">
-        <NavLink to="/" className="flex items-center gap-2">
+      <div className="fixed left-0 right-0 top-0 z-50 flex items-center justify-between px-6 py-4">
+        <NavLink to="/" className="focus-ring flex items-center gap-2 rounded-xl">
           <img src="/favicon.svg" alt="Qurate" className="h-7 w-7" />
           <span className="text-xl font-bold text-gradient">Qurate</span>
         </NavLink>
@@ -37,15 +36,15 @@ export default function Login() {
       </div>
 
       <motion.div
-        initial={{ opacity: 0, y: 30, scale: 0.97 }}
+        initial={{ opacity: 0, y: 24, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.5 }}
-        className="glass-strong w-full max-w-md rounded-3xl p-8"
+        transition={{ duration: 0.45, ease: 'easeOut' }}
+        className="product-shadow w-full max-w-md rounded-3xl border border-[var(--border)] bg-[var(--card)] p-8"
       >
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold">Welcome back</h1>
+          <h1 className="text-2xl font-black tracking-[-0.02em]">Welcome back</h1>
           <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-            Sign in to your Qurate account
+            Sign in and keep working with your data.
           </p>
         </div>
 
@@ -53,7 +52,8 @@ export default function Login() {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="mb-4 rounded-xl bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400"
+            className="mb-4 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-500"
+            role="alert"
           >
             {error}
           </motion.div>
@@ -61,7 +61,7 @@ export default function Login() {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label htmlFor="login-email" className="mb-1.5 block text-sm font-medium text-[var(--muted-foreground)]">
+            <label htmlFor="login-email" className="mb-1.5 block text-sm font-semibold">
               Email
             </label>
             <div className="relative">
@@ -73,13 +73,13 @@ export default function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="you@example.com"
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 pl-10 pr-4 text-sm text-[var(--foreground)] placeholder-[var(--muted-foreground)]/50 outline-none transition-colors focus:border-[var(--q-purple)] focus:ring-1 focus:ring-[var(--q-purple)]"
+                className="focus-ring w-full rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 pl-10 pr-4 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] outline-none transition-colors focus:border-[var(--primary)]"
               />
             </div>
           </div>
 
           <div>
-            <label htmlFor="login-password" className="mb-1.5 block text-sm font-medium text-[var(--muted-foreground)]">
+            <label htmlFor="login-password" className="mb-1.5 block text-sm font-semibold">
               Password
             </label>
             <div className="relative">
@@ -90,37 +90,34 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                placeholder="••••••••"
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 pl-10 pr-11 text-sm text-[var(--foreground)] placeholder-[var(--muted-foreground)]/50 outline-none transition-colors focus:border-[var(--q-purple)] focus:ring-1 focus:ring-[var(--q-purple)]"
+                placeholder="Enter your password"
+                className="focus-ring w-full rounded-xl border border-[var(--border)] bg-[var(--card)] py-3 pl-10 pr-12 text-sm text-[var(--foreground)] placeholder:text-[var(--muted-foreground)] outline-none transition-colors focus:border-[var(--primary)]"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                className="focus-ring absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
               >
                 {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>
 
-          <GradientButton
-            type="submit"
-            disabled={loading}
-            className="w-full justify-center disabled:opacity-50"
-          >
+          <GradientButton type="submit" disabled={loading} className="w-full">
             {loading ? (
               <span className="flex items-center justify-center gap-2">
-                <Loader2 size={16} className="animate-spin" /> Signing in...
+                <Loader2 size={16} className="animate-spin" /> Signing in
               </span>
             ) : (
-              'Sign In'
+              'Sign in'
             )}
           </GradientButton>
         </form>
 
         <p className="mt-6 text-center text-sm text-[var(--muted-foreground)]">
-          Don't have an account?{' '}
-          <NavLink to="/signup" className="font-medium text-[var(--q-purple)] hover:underline">
+          Do not have an account?{' '}
+          <NavLink to="/signup" className="focus-ring rounded-md font-semibold text-[var(--primary)] hover:underline">
             Sign up
           </NavLink>
         </p>

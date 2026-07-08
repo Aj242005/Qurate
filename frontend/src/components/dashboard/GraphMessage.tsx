@@ -17,11 +17,12 @@ export default function GraphMessage({ data }: { data: GraphData }) {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.22, ease: 'easeOut' }}
       className="flex justify-start"
     >
-      <div className="glass max-w-[90%] rounded-2xl rounded-tl-md p-4">
+      <div className="max-w-[94%] rounded-2xl rounded-tl-md border border-[var(--border)] bg-[var(--card)] p-4">
         <div className="mb-3 flex items-center justify-between">
-          <span className="text-xs font-medium text-[var(--q-purple)]">Graph Result</span>
+          <span className="text-xs font-semibold text-[var(--primary)]">Graph result</span>
           <span className="text-xs text-[var(--muted-foreground)]">{data.x.length} points</span>
         </div>
         {(data.x_label || data.y_label) && (
@@ -35,11 +36,11 @@ export default function GraphMessage({ data }: { data: GraphData }) {
             <BarChart data={chartData}>
               <defs>
                 <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#863bff" />
-                  <stop offset="100%" stopColor="#47bfff" />
+                  <stop offset="0%" stopColor="var(--chart-1)" />
+                  <stop offset="100%" stopColor="var(--chart-2)" />
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(134,59,255,0.1)" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
               <XAxis dataKey="x" tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} />
               <YAxis tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} />
               <Tooltip contentStyle={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 12, fontSize: 12 }} />

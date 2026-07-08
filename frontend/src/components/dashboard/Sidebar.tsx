@@ -40,7 +40,8 @@ export default function Sidebar({ onUploadExcel }: SidebarProps) {
       {/* Collapse toggle (always visible) */}
       <button
         onClick={() => dispatch(toggleSidebar())}
-        className="fixed top-4 left-4 z-50 flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--card)] text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)] md:hidden"
+        className="focus-ring fixed left-4 top-4 z-50 flex h-11 w-11 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--card)] text-[var(--muted-foreground)] transition-colors hover:text-[var(--foreground)] md:hidden"
+        aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
       >
         {sidebarOpen ? <PanelLeftClose size={16} /> : <PanelLeft size={16} />}
       </button>
@@ -56,13 +57,14 @@ export default function Sidebar({ onUploadExcel }: SidebarProps) {
           >
             {/* Logo */}
             <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
-              <button onClick={() => navigate('/')} className="flex items-center gap-2 transition-opacity hover:opacity-80">
+              <button onClick={() => navigate('/')} className="focus-ring flex items-center gap-2 rounded-xl transition-opacity hover:opacity-80">
                 <img src="/favicon.svg" alt="Qurate" className="h-6 w-6" />
                 <span className="text-lg font-bold text-gradient">Qurate</span>
               </button>
               <button
                 onClick={() => dispatch(toggleSidebar())}
-                className="hidden md:flex h-7 w-7 items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--accent)]"
+                className="focus-ring hidden h-8 w-8 items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--accent)] md:flex"
+                aria-label="Collapse sidebar"
               >
                 <PanelLeftClose size={14} />
               </button>
@@ -72,7 +74,7 @@ export default function Sidebar({ onUploadExcel }: SidebarProps) {
             <div className="flex-1 overflow-y-auto px-3 py-4">
               <button
                 onClick={handleNewChat}
-                className="mb-2 flex w-full items-center gap-2.5 rounded-xl bg-gradient-brand px-4 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90"
+                className="focus-ring mb-2 flex w-full items-center gap-2.5 rounded-xl bg-[var(--primary)] px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--q-purple-deep)]"
               >
                 <MessageSquarePlus size={16} /> New Chat
               </button>
@@ -83,20 +85,20 @@ export default function Sidebar({ onUploadExcel }: SidebarProps) {
 
               <button
                 onClick={onUploadExcel}
-                className="flex w-full items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm text-[var(--muted-foreground)] transition-colors hover:bg-[var(--accent)] hover:text-[var(--foreground)]"
+                className="focus-ring flex w-full items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm text-[var(--muted-foreground)] transition-colors hover:bg-[var(--accent)] hover:text-[var(--foreground)]"
               >
                 <FileSpreadsheet size={16} /> Upload Excel
               </button>
 
               <button
                 onClick={handleClearHistory}
-                className="flex w-full items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm text-[var(--muted-foreground)] transition-colors hover:bg-[var(--accent)] hover:text-[var(--foreground)]"
+                className="focus-ring flex w-full items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm text-[var(--muted-foreground)] transition-colors hover:bg-[var(--accent)] hover:text-[var(--foreground)]"
               >
                 <Trash2 size={16} /> Clear History
               </button>
 
               <button
-                className="flex w-full items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm text-[var(--muted-foreground)] transition-colors hover:bg-[var(--accent)] hover:text-[var(--foreground)]"
+                className="flex w-full cursor-not-allowed items-center gap-2.5 rounded-xl px-4 py-2.5 text-sm text-[var(--muted-foreground)]/60"
                 disabled
               >
                 <History size={16} /> Chat History
@@ -118,8 +120,9 @@ export default function Sidebar({ onUploadExcel }: SidebarProps) {
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="text-[var(--muted-foreground)] hover:text-red-400 transition-colors"
+                  className="focus-ring rounded-lg text-[var(--muted-foreground)] transition-colors hover:text-red-500"
                   title="Logout"
+                  aria-label="Log out"
                 >
                   <LogOut size={16} />
                 </button>

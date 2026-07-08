@@ -30,26 +30,24 @@ export default function Navbar() {
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
-      className="fixed top-0 left-0 right-0 z-50 glass-strong"
+      className="glass-strong fixed left-0 right-0 top-0 z-50"
     >
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-        {/* Logo */}
-        <NavLink to="/" className="flex items-center gap-2.5">
+      <div className="mx-auto grid h-16 max-w-7xl grid-cols-[1fr_auto_1fr] items-center gap-4 px-6">
+        <NavLink to="/" className="focus-ring flex w-fit items-center gap-2.5 rounded-xl">
           <img src="/favicon.svg" alt="Qurate" className="h-7 w-7" />
           <span className="text-xl font-bold text-gradient">Qurate</span>
         </NavLink>
 
-        {/* Desktop Nav */}
-        <div className="hidden items-center gap-1 md:flex ml-30 ">
+        <div className="hidden items-center justify-center gap-1 md:flex">
           {navLinks.map((link) => (
             <NavLink
               key={link.to}
               to={link.to}
               className={({ isActive }) =>
-                `rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 ${
+                `focus-ring rounded-xl px-4 py-2 text-sm font-medium transition-colors duration-200 ${
                   isActive
-                    ? 'text-[var(--q-purple)]'
-                    : 'text-[var(--muted-foreground)] hover:text-[var(--foreground)]'
+                    ? 'bg-[var(--accent)] text-[var(--primary)]'
+                    : 'text-[var(--muted-foreground)] hover:bg-[var(--accent)]/70 hover:text-[var(--foreground)]'
                 }`
               }
             >
@@ -59,7 +57,7 @@ export default function Navbar() {
         </div>
 
         {/* Right side */}
-        <div className="hidden items-center gap-3 md:flex">
+        <div className="hidden items-center justify-end gap-3 md:flex">
           <ThemeToggle />
           {isAuthenticated ? (
             <>
@@ -84,9 +82,10 @@ export default function Navbar() {
 
         {/* Mobile menu toggle */}
         <button
-          className="flex items-center md:hidden text-[var(--foreground)]"
+          className="focus-ring col-start-3 ml-auto flex h-11 w-11 items-center justify-center rounded-xl text-[var(--foreground)] md:hidden"
           onClick={() => setMobileOpen(!mobileOpen)}
           aria-label="Toggle menu"
+          aria-expanded={mobileOpen}
         >
           {mobileOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
@@ -98,7 +97,7 @@ export default function Navbar() {
           initial={{ opacity: 0, height: 0 }}
           animate={{ opacity: 1, height: 'auto' }}
           exit={{ opacity: 0, height: 0 }}
-          className="border-t border-[var(--border)] px-6 py-4 md:hidden glass-strong"
+          className="glass-strong border-t border-[var(--border)] px-6 py-4 md:hidden"
         >
           <div className="flex flex-col gap-2">
             {navLinks.map((link) => (
@@ -106,7 +105,7 @@ export default function Navbar() {
                 key={link.to}
                 to={link.to}
                 onClick={() => setMobileOpen(false)}
-                className="rounded-lg px-4 py-2 text-sm font-medium text-[var(--muted-foreground)] hover:text-[var(--foreground)]"
+                className="focus-ring rounded-xl px-4 py-3 text-sm font-medium text-[var(--muted-foreground)] hover:bg-[var(--accent)] hover:text-[var(--foreground)]"
               >
                 {link.label}
               </NavLink>
