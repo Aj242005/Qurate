@@ -28,7 +28,14 @@ type HistoryEntry = {
   prompt?: unknown;
   query?: unknown;
   question?: unknown;
+  request?: unknown;
+  user_message?: unknown;
+  user_prompt?: unknown;
+  user_input?: unknown;
   answer?: unknown;
+  assistant_response?: unknown;
+  query_response?: unknown;
+  prompt_response?: unknown;
   response?: HistoryResponsePayload | string | unknown;
   type?: 'text' | 'table' | 'graph';
   timestamp?: string;
@@ -78,17 +85,35 @@ function responsePayload(value: unknown) {
   return value;
 }
 
+function userSide(entry: HistoryEntry) {
+  return entry.content ??
+    entry.message ??
+    entry.prompt ??
+    entry.query ??
+    entry.question ??
+    entry.request ??
+    entry.user_message ??
+    entry.user_prompt ??
+    entry.user_input;
+}
+
+function assistantSide(entry: HistoryEntry) {
+  return entry.response ??
+    entry.answer ??
+    entry.assistant_response ??
+    entry.query_response ??
+    entry.prompt_response;
+}
+
 function toChatMessage(entry: HistoryEntry, fallbackRole?: ApiMessageRole): ChatMessage {
   const role = entry.role || entry.sender || fallbackRole || 'assistant';
-  const rawResponse = entry.response ?? entry.answer;
+  const rawResponse = assistantSide(entry);
   const normalizedResponse = role === 'assistant'
     ? responsePayload(rawResponse ?? entry.content ?? entry.message)
-    : (entry.content ?? entry.message ?? entry.prompt ?? entry.query ?? entry.question);
+    : userSide(entry);
   const type = role === 'assistant' ? responseType(rawResponse ?? entry) : 'text';
   const content = messageContent(
-    entry.content ??
-    entry.message ??
-    (role === 'user' ? (entry.prompt ?? entry.query ?? entry.question) : normalizedResponse)
+    role === 'user' ? userSide(entry) : (entry.content ?? entry.message ?? normalizedResponse)
   );
 
   return {
@@ -130,13 +155,16 @@ function normalizeHistory(data: unknown): ChatMessage[] {
     if (!isRecord(item)) return [];
     const entry = item as HistoryEntry;
 
-    if ((entry.prompt || entry.query || entry.question) && (entry.response || entry.answer)) {
+    const promptValue = userSide(entry);
+    const responseValue = assistantSide(entry);
+
+    if (promptValue && responseValue) {
       return [
         toChatMessage(
           {
             id: `${entry.id || nextId()}_user`,
             role: 'user',
-            content: entry.prompt ?? entry.query ?? entry.question,
+            content: promptValue,
             timestamp: entry.timestamp,
             created_at: entry.created_at,
           },
@@ -146,8 +174,7 @@ function normalizeHistory(data: unknown): ChatMessage[] {
           {
             id: `${entry.id || nextId()}_assistant`,
             role: 'assistant',
-            content: entry.answer,
-            response: entry.response ?? entry.answer,
+            response: responseValue,
             type: entry.type,
             timestamp: entry.timestamp,
             created_at: entry.created_at,
