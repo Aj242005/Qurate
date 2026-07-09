@@ -36,8 +36,8 @@ server.add_middleware(
     CORSMiddleware,
     allow_origin_regex="https?://.*",
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "accesstoken", "refreshtoken", "Authorization", "Accept"],
     expose_headers=["accesstoken", "refreshtoken"], 
 )
 
