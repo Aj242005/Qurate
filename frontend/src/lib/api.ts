@@ -29,9 +29,11 @@ export function clearTokens() {
 
 async function tryRefresh(): Promise<boolean> {
   const { refreshToken } = getTokens();
+  console.log('[tryRefresh] Initialized. Refresh token available:', !!refreshToken);
   if (!refreshToken) return false;
 
   try {
+    console.log('[tryRefresh] Sending POST request to /refresh...');
     const res = await fetch(`${BASE_URL}/refresh`, {
       method: 'POST',
       headers: {
@@ -39,32 +41,38 @@ async function tryRefresh(): Promise<boolean> {
         refreshtoken: refreshToken,
       },
     });
+    console.log('[tryRefresh] Response status:', res.status);
 
     let newAccess = '';
     let newRefresh = '';
 
     try {
       const data = await res.clone().json() as ApiResponse;
+      console.log('[tryRefresh] JSON body response:', data);
       if (data && data.anotherValid && typeof data.anotherValid === 'object') {
         const tokens = data.anotherValid as Record<string, string>;
         newAccess = tokens.accessToken || tokens.accesstoken || '';
         newRefresh = tokens.refreshToken || tokens.refreshtoken || '';
       }
-    } catch {
-      // ignore JSON parse/structure errors
+    } catch (e) {
+      console.warn('[tryRefresh] JSON parsing failed or struct mismatched:', e);
     }
 
     if (!newAccess || !newRefresh) {
       newAccess = res.headers.get('accesstoken') || '';
       newRefresh = res.headers.get('refreshtoken') || '';
+      console.log('[tryRefresh] Fallback to response headers. Access:', !!newAccess, 'Refresh:', !!newRefresh);
     }
 
     if (res.ok && newAccess && newRefresh) {
+      console.log('[tryRefresh] Success. Storing new tokens.');
       setTokens(newAccess, newRefresh);
       return true;
     }
+    console.warn('[tryRefresh] Failed. Response not OK or tokens missing.');
     return false;
-  } catch {
+  } catch (err) {
+    console.error('[tryRefresh] Exception during fetch:', err);
     return false;
   }
 }
@@ -107,26 +115,45 @@ export async function apiFetch<T = unknown>(
       : JSON.stringify(options.body);
   }
 
+  console.log(`[apiFetch] Request starting for path: ${path}, method: ${options.method || 'GET'}`);
   let res = await fetch(`${BASE_URL}${path}`, fetchOpts);
+  console.log(`[apiFetch] Response status for ${path}:`, res.status);
 
   // Handle expired access token — try refresh
   if (res.status === 410) {
+    console.warn(`[apiFetch] Path ${path} returned 410 (Expired token).`);
     if (!isRefreshing) {
+      console.log('[apiFetch] Triggering tryRefresh...');
       isRefreshing = true;
       tryRefresh().then((refreshed) => {
         isRefreshing = false;
+        console.log('[apiFetch] tryRefresh finished. Result:', refreshed);
         if (refreshed) {
           const { accessToken: newToken } = getTokens();
           onRefreshed(newToken);
         } else {
+          console.warn('[apiFetch] Token refresh failed. Clearing tokens and redirecting.');
+          onRefreshed(''); // Unblock pending subscribers
           clearTokens();
           window.location.href = '/login';
         }
+      }).catch((e) => {
+        isRefreshing = false;
+        console.error('[apiFetch] tryRefresh promise uncaught error:', e);
+        onRefreshed(''); // Unblock pending subscribers
+        clearTokens();
+        window.location.href = '/login';
       });
     }
 
+    console.log(`[apiFetch] Queueing request for ${path} until refresh finishes...`);
     const retryOriginalRequest = new Promise<Response>((resolve) => {
       subscribeTokenRefresh((token) => {
+        if (!token) {
+          console.warn(`[apiFetch] Retrying queued request for ${path} with empty token (refresh failed)`);
+        } else {
+          console.log(`[apiFetch] Retrying queued request for ${path} with new token`);
+        }
         headers['accesstoken'] = token;
         fetchOpts.headers = headers;
         resolve(fetch(`${BASE_URL}${path}`, fetchOpts));
@@ -134,6 +161,7 @@ export async function apiFetch<T = unknown>(
     });
 
     res = await retryOriginalRequest;
+    console.log(`[apiFetch] Retried request for ${path} finished. Status:`, res.status);
   }
 
   // Handle tampered/invalid token
