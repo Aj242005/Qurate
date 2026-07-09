@@ -128,7 +128,8 @@ def login(user: userModel.loginReq, response: Response, request: Request):
     payloadd = {"email": db_user["email"], "user_id": db_user["user_id"], "name": db_user["name"]}
     payload_instance = payload.Payload.model_validate(payloadd)
 
-    response.headers["accesstoken"]  = str(access_token.createToken(payload_instance).anotherValid)
+    accToken = str(access_token.createToken(payload_instance).anotherValid)
+    response.headers["accesstoken"]  = accToken
     rfToken                           = str(refresh_token.createToken(payload_instance).anotherValid)
 
     if request.headers.get("refreshtoken") is not None:
@@ -139,7 +140,14 @@ def login(user: userModel.loginReq, response: Response, request: Request):
     response.headers["refreshtoken"] = rfToken
     redis_client.addRefreshTokenToRedis(rfToken, db_user["email"])
 
-    return trueRes.SuccessRes(status=200, message="logged in succesfully", anotherValid=None)
+    return trueRes.SuccessRes(
+        status=200,
+        message="logged in succesfully",
+        anotherValid={
+            "accessToken": accToken,
+            "refreshToken": rfToken
+        }
+    )
 
 
 @server.post("/refresh")
@@ -159,9 +167,17 @@ def refreshTokenGeneration(response: Response, request: Request) -> falseRes.Err
                 payload_instance = payload.Payload.model_validate(verificationStatus.anotherValid)
                 newRf            = refresh_token.createToken(payload_instance).anotherValid
                 redis_client.addRefreshTokenToRedis(str(newRf), userEmail)
-                response.headers["accesstoken"]  = str(access_token.createToken(payload_instance).anotherValid)
+                accToken = str(access_token.createToken(payload_instance).anotherValid)
+                response.headers["accesstoken"]  = accToken
                 response.headers["refreshtoken"] = str(newRf)
-                return trueRes.SuccessRes(status=200, message="Valid refresh token used", anotherValid=None)
+                return trueRes.SuccessRes(
+                    status=200,
+                    message="Valid refresh token used",
+                    anotherValid={
+                        "accessToken": accToken,
+                        "refreshToken": str(newRf)
+                    }
+                )
             else:
                 raise HTTPException(status_code=401, detail="Invalid Refresh token used")
         else:

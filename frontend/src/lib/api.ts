@@ -40,8 +40,24 @@ async function tryRefresh(): Promise<boolean> {
       },
     });
 
-    const newAccess = res.headers.get('accesstoken');
-    const newRefresh = res.headers.get('refreshtoken');
+    let newAccess = '';
+    let newRefresh = '';
+
+    try {
+      const data = await res.clone().json() as ApiResponse;
+      if (data && data.anotherValid && typeof data.anotherValid === 'object') {
+        const tokens = data.anotherValid as Record<string, string>;
+        newAccess = tokens.accessToken || tokens.accesstoken || '';
+        newRefresh = tokens.refreshToken || tokens.refreshtoken || '';
+      }
+    } catch {
+      // ignore JSON parse/structure errors
+    }
+
+    if (!newAccess || !newRefresh) {
+      newAccess = res.headers.get('accesstoken') || '';
+      newRefresh = res.headers.get('refreshtoken') || '';
+    }
 
     if (res.ok && newAccess && newRefresh) {
       setTokens(newAccess, newRefresh);
@@ -184,9 +200,22 @@ export async function apiLogin(payload: LoginPayload) {
     body: payload,
   });
 
-  // Extract tokens from headers
-  const accessToken = res.headers.get('accesstoken');
-  const refreshToken = res.headers.get('refreshtoken');
+  // Extract tokens from body, fallback to headers
+  let accessToken = '';
+  let refreshToken = '';
+
+  const data = res.data;
+  if (data && data.anotherValid && typeof data.anotherValid === 'object') {
+    const tokens = data.anotherValid as Record<string, string>;
+    accessToken = tokens.accessToken || tokens.accesstoken || '';
+    refreshToken = tokens.refreshToken || tokens.refreshtoken || '';
+  }
+
+  if (!accessToken || !refreshToken) {
+    accessToken = res.headers.get('accesstoken') || '';
+    refreshToken = res.headers.get('refreshtoken') || '';
+  }
+
   if (accessToken && refreshToken) {
     setTokens(accessToken, refreshToken);
   }
