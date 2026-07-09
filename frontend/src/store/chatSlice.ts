@@ -10,38 +10,6 @@ export interface ChatMessage {
   timestamp: string;
 }
 
-type ApiMessageRole = 'user' | 'assistant';
-
-type HistoryResponsePayload = {
-  type?: 'text' | 'table' | 'graph';
-  response?: unknown;
-  data?: unknown;
-  content?: unknown;
-};
-
-type HistoryEntry = {
-  id?: string | number;
-  role?: ApiMessageRole;
-  sender?: ApiMessageRole;
-  content?: unknown;
-  message?: unknown;
-  prompt?: unknown;
-  query?: unknown;
-  question?: unknown;
-  request?: unknown;
-  user_message?: unknown;
-  user_prompt?: unknown;
-  user_input?: unknown;
-  answer?: unknown;
-  assistant_response?: unknown;
-  query_response?: unknown;
-  prompt_response?: unknown;
-  response?: HistoryResponsePayload | string | unknown;
-  type?: 'text' | 'table' | 'graph';
-  timestamp?: string;
-  created_at?: string;
-};
-
 interface ChatState {
   messages: ChatMessage[];
   isLoading: boolean;
@@ -60,105 +28,171 @@ function nextId() {
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function messageContent(value: unknown) {
+function stringify(value: unknown): string {
   if (typeof value === 'string') return value;
   if (value === null || value === undefined) return '';
   return JSON.stringify(value);
 }
 
-function responseType(value: unknown): ChatMessage['type'] {
-  if (isRecord(value)) {
-    if ('type' in value && (value.type === 'table' || value.type === 'graph' || value.type === 'text')) {
-      return value.type;
-    }
-    if ('data' in value && value.data !== null) {
-      return responseType(value.data);
-    }
-    if ('response' in value && value.response !== null) {
-      return responseType(value.response);
-    }
+/**
+ * Attempts to parse a string as JSON. Returns the parsed value if it's
+ * a record or array; returns null otherwise.
+ */
+function tryParseJSON(str: string): Record<string, unknown> | null {
+  try {
+    const parsed = JSON.parse(str);
+    if (isRecord(parsed)) return parsed;
+  } catch {
+    // not valid JSON
   }
+  return null;
+}
+
+/**
+ * Resolves the "typed response" payload from a history entry's response field.
+ *
+ * The backend stores the response object as:
+ *   { type: "text"|"table"|"graph", response: <actual payload> }
+ *
+ * But in some cases `response.response` is a STRINGIFIED JSON of the real payload
+ * (backend bug), or the outer `type` is wrong (says "text" when it's actually "table").
+ *
+ * This function normalizes all those cases and returns:
+ *   { type, payload } where payload is the final unwrapped value.
+ */
+function resolveTypedResponse(raw: unknown): { type: 'text' | 'table' | 'graph'; payload: unknown } {
+  if (!isRecord(raw)) {
+    // If raw is a string, try to parse it as JSON (backend sometimes stringifies the whole thing)
+    if (typeof raw === 'string') {
+      const parsed = tryParseJSON(raw);
+      if (parsed) return resolveTypedResponse(parsed);
+    }
+    return { type: 'text', payload: raw };
+  }
+
+  // If it's a { type, response } wrapper from the backend
+  if ('type' in raw && 'response' in raw) {
+    const declaredType = raw.type;
+    let innerPayload = raw.response;
+
+    // If the inner payload is a string, try to parse it
+    if (typeof innerPayload === 'string') {
+      const parsed = tryParseJSON(innerPayload);
+      if (parsed) innerPayload = parsed;
+    }
+
+    // If the inner payload is itself a { type, response } wrapper, recurse
+    if (isRecord(innerPayload) && 'type' in innerPayload && 'response' in innerPayload) {
+      return resolveTypedResponse(innerPayload);
+    }
+
+    // Detect actual type from the payload shape (override backend's declared type if wrong)
+    const actualType = detectType(innerPayload, declaredType);
+    return { type: actualType, payload: innerPayload };
+  }
+
+  // If it looks like table data directly
+  if ('columns' in raw && 'rows' in raw) {
+    return { type: 'table', payload: raw };
+  }
+
+  // If it looks like graph data directly
+  if ('x' in raw && 'y' in raw) {
+    return { type: 'graph', payload: raw };
+  }
+
+  // If it has a 'data' wrapper (from the prompt2query response envelope)
+  if ('data' in raw && isRecord(raw.data)) {
+    return resolveTypedResponse(raw.data);
+  }
+
+  return { type: 'text', payload: raw };
+}
+
+/**
+ * Detect the actual type from the payload shape, overriding the declared type
+ * if the data clearly contradicts it.
+ */
+function detectType(
+  payload: unknown,
+  declaredType: unknown
+): 'text' | 'table' | 'graph' {
+  if (isRecord(payload)) {
+    if ('columns' in payload && 'rows' in payload) return 'table';
+    if ('x' in payload && 'y' in payload) return 'graph';
+  }
+
+  if (declaredType === 'table' || declaredType === 'graph' || declaredType === 'text') {
+    return declaredType as 'text' | 'table' | 'graph';
+  }
+
   return 'text';
 }
 
-function responsePayload(value: unknown): unknown {
-  if (isRecord(value)) {
-    // If it's a wrapper response containing 'data'
-    if ('data' in value && value.data !== null) {
-      return responsePayload(value.data);
-    }
-    // If it's a wrapper containing 'type' and 'response' (but not a table/graph data structure itself)
-    if ('type' in value && 'response' in value) {
-      return responsePayload(value.response);
-    }
-    if ('response' in value) {
-      return responsePayload(value.response);
-    }
-    if ('content' in value) {
-      return responsePayload(value.content);
-    }
+/**
+ * Normalize a single MongoDB history entry into a ChatMessage.
+ */
+function historyEntryToChatMessage(entry: Record<string, unknown>): ChatMessage {
+  const role: 'user' | 'assistant' =
+    entry.role === 'user' ? 'user' :
+    entry.role === 'assistant' ? 'assistant' :
+    (entry.sender === 'user' ? 'user' : 'assistant');
+
+  const timestamp = stringify(entry.timestamp || entry.created_at || new Date().toISOString());
+
+  if (role === 'user') {
+    // For user messages, content is the prompt text
+    const text = stringify(entry.content ?? entry.message ?? entry.prompt ?? entry.query ?? '');
+    return {
+      id: String(entry.id || nextId()),
+      role: 'user',
+      content: text,
+      type: 'text',
+      response: text,
+      timestamp,
+    };
   }
-  return value;
-}
 
-function userSide(entry: HistoryEntry) {
-  return entry.content ??
-    entry.message ??
-    entry.prompt ??
-    entry.query ??
-    entry.question ??
-    entry.request ??
-    entry.user_message ??
-    entry.user_prompt ??
-    entry.user_input;
-}
+  // For assistant messages, resolve the typed response from the response field
+  const rawResponse = entry.response;
+  const { type, payload } = resolveTypedResponse(rawResponse);
 
-function assistantSide(entry: HistoryEntry) {
-  return entry.response ??
-    entry.answer ??
-    entry.assistant_response ??
-    entry.query_response ??
-    entry.prompt_response;
-}
-
-function toChatMessage(entry: HistoryEntry, fallbackRole?: ApiMessageRole): ChatMessage {
-  const role = entry.role || entry.sender || fallbackRole || 'assistant';
-  const rawResponse = assistantSide(entry);
-  const normalizedResponse = role === 'assistant'
-    ? responsePayload(rawResponse ?? entry.content ?? entry.message)
-    : userSide(entry);
-  const type = role === 'assistant' ? responseType(rawResponse ?? entry) : 'text';
-  const content = messageContent(
-    role === 'user' ? userSide(entry) : (entry.content ?? entry.message ?? normalizedResponse)
-  );
+  // For the display content string:
+  // - For text type: use the payload directly if it's a string, otherwise the content field
+  // - For table/graph: use the content field (human-readable summary) if available
+  let content: string;
+  if (type === 'text') {
+    content = typeof payload === 'string' ? payload : stringify(entry.content ?? payload);
+  } else {
+    // For table/graph, prefer the content field as a human-readable label
+    content = typeof entry.content === 'string' && entry.content
+      ? entry.content
+      : `${type} result`;
+  }
 
   return {
     id: String(entry.id || nextId()),
-    role,
+    role: 'assistant',
     content,
     type,
-    response: normalizedResponse,
-    timestamp: entry.timestamp || entry.created_at || new Date().toISOString(),
+    response: payload,
+    timestamp,
   };
 }
 
+/**
+ * Extract the history items array from the API response.
+ * The backend wraps it as { status, message, anotherValid: [...] }
+ */
 function extractHistoryItems(data: unknown): unknown[] {
   if (Array.isArray(data)) return data;
   if (!isRecord(data)) return [];
 
-  const candidates = [
-    data.anotherValid,
-    data.data,
-    data.messages,
-    data.history,
-    data.chat_history,
-    data.chats,
-  ];
-
-  for (const candidate of candidates) {
+  for (const key of ['anotherValid', 'data', 'messages', 'history', 'chat_history', 'chats']) {
+    const candidate = data[key];
     if (Array.isArray(candidate)) return candidate;
     if (isRecord(candidate)) {
       const nested = extractHistoryItems(candidate);
@@ -169,46 +203,13 @@ function extractHistoryItems(data: unknown): unknown[] {
   return [];
 }
 
+/**
+ * Normalize the full API response into an array of ChatMessages.
+ */
 function normalizeHistory(data: unknown): ChatMessage[] {
   return extractHistoryItems(data).flatMap((item) => {
     if (!isRecord(item)) return [];
-    const entry = item as HistoryEntry;
-
-    // If it has an explicit role, it is already a normalized single message
-    if (entry.role === 'user' || entry.role === 'assistant') {
-      return [toChatMessage(entry)];
-    }
-
-    const promptValue = userSide(entry);
-    const responseValue = assistantSide(entry);
-
-    if (promptValue && responseValue) {
-      return [
-        toChatMessage(
-          {
-            id: `${entry.id || nextId()}_user`,
-            role: 'user',
-            content: promptValue,
-            timestamp: entry.timestamp,
-            created_at: entry.created_at,
-          },
-          'user'
-        ),
-        toChatMessage(
-          {
-            id: `${entry.id || nextId()}_assistant`,
-            role: 'assistant',
-            response: responseValue,
-            type: entry.type,
-            timestamp: entry.timestamp,
-            created_at: entry.created_at,
-          },
-          'assistant'
-        ),
-      ];
-    }
-
-    return [toChatMessage(entry)];
+    return [historyEntryToChatMessage(item)];
   });
 }
 
@@ -237,14 +238,13 @@ export const sendPrompt = createAsyncThunk(
       }
 
       if (res.data && res.data.data) {
+        const { type, payload } = resolveTypedResponse(res.data.data);
         const assistantMsg: ChatMessage = {
           id: nextId(),
           role: 'assistant',
-          content: typeof res.data.data.response === 'string'
-            ? res.data.data.response
-            : JSON.stringify(res.data.data.response),
-          type: res.data.data.type,
-          response: res.data.data.response,
+          content: typeof payload === 'string' ? payload : stringify(payload),
+          type,
+          response: payload,
           timestamp: new Date().toISOString(),
         };
         return assistantMsg;

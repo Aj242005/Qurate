@@ -15,6 +15,19 @@ export default function TableMessage({ data }: TableMessageProps) {
   const [sortCol, setSortCol] = useState<number | null>(null);
   const [sortAsc, setSortAsc] = useState(true);
 
+  // Defensive: if data is missing or malformed, render as text
+  if (!data || !Array.isArray(data.columns) || !Array.isArray(data.rows)) {
+    return (
+      <div className="flex justify-start">
+        <div className="max-w-[94%] rounded-2xl rounded-tl-md border border-[var(--border)] bg-[var(--card)] p-4">
+          <span className="text-sm text-[var(--muted-foreground)]">
+            {data ? JSON.stringify(data) : 'No table data available'}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   const { columns, rows } = data;
 
   const handleSort = (colIndex: number) => {
