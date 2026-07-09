@@ -27,7 +27,19 @@ export const loginUser = createAsyncThunk(
     try {
       const res = await apiLogin(payload);
       if (res.status === 200 || res.data.status === 200) {
-        return { email: payload.email };
+        let user = { name: '', email: payload.email, user_id: '' };
+        const data = res.data;
+        if (data && data.anotherValid && typeof data.anotherValid === 'object') {
+          const body = data.anotherValid as Record<string, any>;
+          if (body.user && typeof body.user === 'object') {
+            user = {
+              name: body.user.name || '',
+              email: body.user.email || payload.email,
+              user_id: body.user.user_id || ''
+            };
+          }
+        }
+        return { user };
       }
       return rejectWithValue(res.data.message || 'Login failed');
     } catch {
@@ -80,7 +92,7 @@ const authSlice = createSlice({
       .addCase(loginUser.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
-        state.user = { name: '', email: action.payload.email, user_id: '' };
+        state.user = action.payload.user;
         localStorage.setItem('qurate_user', JSON.stringify(state.user));
       })
       .addCase(loginUser.rejected, (state, action) => {

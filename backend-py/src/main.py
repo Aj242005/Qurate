@@ -145,7 +145,12 @@ def login(user: userModel.loginReq, response: Response, request: Request):
         message="logged in succesfully",
         anotherValid={
             "accessToken": accToken,
-            "refreshToken": rfToken
+            "refreshToken": rfToken,
+            "user": {
+                "name": db_user["name"],
+                "email": db_user["email"],
+                "user_id": db_user["user_id"]
+            }
         }
     )
 
