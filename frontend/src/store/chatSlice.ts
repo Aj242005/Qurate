@@ -70,17 +70,36 @@ function messageContent(value: unknown) {
 }
 
 function responseType(value: unknown): ChatMessage['type'] {
-  if (isRecord(value) && (value.type === 'table' || value.type === 'graph' || value.type === 'text')) {
-    return value.type;
+  if (isRecord(value)) {
+    if ('type' in value && (value.type === 'table' || value.type === 'graph' || value.type === 'text')) {
+      return value.type;
+    }
+    if ('data' in value && value.data !== null) {
+      return responseType(value.data);
+    }
+    if ('response' in value && value.response !== null) {
+      return responseType(value.response);
+    }
   }
   return 'text';
 }
 
-function responsePayload(value: unknown) {
+function responsePayload(value: unknown): unknown {
   if (isRecord(value)) {
-    if ('response' in value) return value.response;
-    if ('data' in value) return value.data;
-    if ('content' in value) return value.content;
+    // If it's a wrapper response containing 'data'
+    if ('data' in value && value.data !== null) {
+      return responsePayload(value.data);
+    }
+    // If it's a wrapper containing 'type' and 'response' (but not a table/graph data structure itself)
+    if ('type' in value && 'response' in value) {
+      return responsePayload(value.response);
+    }
+    if ('response' in value) {
+      return responsePayload(value.response);
+    }
+    if ('content' in value) {
+      return responsePayload(value.content);
+    }
   }
   return value;
 }
@@ -154,6 +173,11 @@ function normalizeHistory(data: unknown): ChatMessage[] {
   return extractHistoryItems(data).flatMap((item) => {
     if (!isRecord(item)) return [];
     const entry = item as HistoryEntry;
+
+    // If it has an explicit role, it is already a normalized single message
+    if (entry.role === 'user' || entry.role === 'assistant') {
+      return [toChatMessage(entry)];
+    }
 
     const promptValue = userSide(entry);
     const responseValue = assistantSide(entry);
